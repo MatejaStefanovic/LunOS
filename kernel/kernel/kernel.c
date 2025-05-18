@@ -3,5 +3,5 @@
 
 void kernel_main(void) {
 	terminal_initialize();
-	kprintf("%s = %d", "s", 3*9-16 );
+	kprintf("%s", "samalamadumalama");
 }
