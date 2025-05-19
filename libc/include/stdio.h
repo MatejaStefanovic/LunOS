@@ -12,7 +12,7 @@ extern "C" {
 int printf(const char* __restrict, ...);
 int putchar(int);
 int puts(const char*);
-
+int itoa(int, char*);
 #ifdef __cplusplus
 }
 #endif
