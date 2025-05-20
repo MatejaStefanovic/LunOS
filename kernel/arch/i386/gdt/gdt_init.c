@@ -1,18 +1,16 @@
 #include <kernel/gdt_init.h>
-#include <kernel/klogging.h>
 
 struct gdt_entry gdt[NUM_OF_ENTRIES];
 struct tss_entry tss;
-
 void set_gdt_entry(int index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity){
-    gdt[index].limit_lower  = limit & 0xFFFF;
-    gdt[index].base_lower   = base & 0xFFFF;
-    gdt[index].base_middle  = (base >> 16) & 0xFF;
-    gdt[index].access       = access;
-    gdt[index].granularity  = ((limit >> 16) & 0x0F) | (granularity & 0xF0);
-    gdt[index].base_high    = (base >> 24) & 0xFF;
+    gdt[index].limit_lower  = limit & 0xFFFF; // Set bits 0-15
+    gdt[index].base_lower   = base & 0xFFFF; // Set bits 0-15
+    gdt[index].base_middle  = (base >> 16) & 0xFF; // Set bits 16–23 
+    gdt[index].access       = access; // Set the access byte
+    gdt[index].granularity  = ((limit >> 16) & 0x0F) | (granularity & 0xF0); // Set bits 17-20 for limit 
+    gdt[index].base_high    = (base >> 24) & 0xFF; // Set bits 24-31
 }
-void init_tss_entry(){
+void create_tss_entry(){
     uint32_t base = (uint32_t)&tss;
     uint32_t limit = sizeof(struct tss_entry);
     // TSS is a structured object, not just a range of memory like
@@ -34,24 +32,26 @@ void init_gdt(){
      * 00 is reserved and unused
      * 0xF is used for the final 4 bits for limit,
      * tells the total size of the segment, in our case
-     * a total of 20 bits*/
+     * a total of 20 bits */
     set_gdt_entry(GDT_ENTRY_KCODE, 0, 0xFFFFF, 0x9A, 0xCF);
     set_gdt_entry(GDT_ENTRY_KDATA, 0, 0xFFFFF, 0x92, 0xCF);
     set_gdt_entry(GDT_ENTRY_UCODE, 0, 0xFFFFF, 0xFA, 0xCF);
     set_gdt_entry(GDT_ENTRY_UDATA, 0, 0xFFFFF, 0xF2, 0xCF);
-    init_tss_entry();  
+    create_tss_entry();  
 
 
     struct gdt_ptr gdtr;
     gdtr.limit = sizeof(struct gdt_entry) * NUM_OF_ENTRIES - 1; 
-    gdtr.base = (uint32_t)&gdt;
+    gdtr.base = (uint32_t)&gdt; // address of the first entry which is null segment
 
-    /*  setGdt is an asm function located in gdt.s file used to load GDT into 
-     *  the gdtr (gdt register) using lgdt instruction
+    /* 
+     * setGdt is an asm function located in gdt.s file used to load GDT into 
+     * the gdtr (gdt register) using lgdt instruction
     */ 
     setGdt(gdtr.limit, gdtr.base);
 
-    /* reloadSegments is an asm function located in gdt.s file used to load
+    /* 
+     * reloadSegments is an asm function located in gdt.s file used to load
      * segment selectors so that the CPU can deal with GDT 
     */
     reloadSegments();

@@ -60,12 +60,13 @@ struct tss_entry{
      uint16_t iomap_base_addr;
 } __attribute__((packed));
 
+extern struct tss_entry tss;
 
 extern void setGdt(uint16_t, uint32_t);
 extern void reloadSegments(void);
 
 void set_gdt_entry(int, uint32_t, uint32_t, uint8_t, uint8_t);
-void set_tss_entry(int, uint32_t, uint32_t);
+void create_tss_entry(void);
 void init_gdt(void);
 
 #endif
