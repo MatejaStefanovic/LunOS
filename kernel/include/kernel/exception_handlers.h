@@ -1,0 +1,5 @@
+#ifndef __KERNEL_EXCEPTION_HANDLERS_H
+#define __KERNEL_EXCEPTION_HANDLERS_H
+
+
+#endif
