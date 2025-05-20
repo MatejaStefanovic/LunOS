@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-#define KPRINTF_BUF_SIZE 4
+#define KPRINTF_BUF_SIZE 1024
 // Function that formats the output string
 int kvsprintf(char *, const char* __restrict, va_list);
 
