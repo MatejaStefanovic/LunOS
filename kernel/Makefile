@@ -30,22 +30,24 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 kernel/kernel.o \
+kernel/console/tty/tty.o \
+kernel/console/logging/klogging.o \
 
 OBJS=\
-$(ARCHDIR)/crti.o \
-$(ARCHDIR)/crtbegin.o \
+$(ARCHDIR)/boot/crt/crti.o \
+$(ARCHDIR)/boot/crt/crtbegin.o \
 $(KERNEL_OBJS) \
-$(ARCHDIR)/crtend.o \
-$(ARCHDIR)/crtn.o \
+$(ARCHDIR)/boot/crt/crtend.o \
+$(ARCHDIR)/boot/crt/crtn.o \
 
 LINK_LIST=\
 $(LDFLAGS) \
-$(ARCHDIR)/crti.o \
-$(ARCHDIR)/crtbegin.o \
+$(ARCHDIR)/boot/crt/crti.o \
+$(ARCHDIR)/boot/crt/crtbegin.o \
 $(KERNEL_OBJS) \
 $(LIBS) \
-$(ARCHDIR)/crtend.o \
-$(ARCHDIR)/crtn.o \
+$(ARCHDIR)/boot/crt/crtend.o \
+$(ARCHDIR)/boot/crt/crtn.o \
 
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S
@@ -56,7 +58,7 @@ LunOS.kernel: $(OBJS) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
 	grub-file --is-x86-multiboot LunOS.kernel
 
-$(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
+$(ARCHDIR)/boot/crt/crtbegin.o $(ARCHDIR)/boot/crt/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
 .c.o:
