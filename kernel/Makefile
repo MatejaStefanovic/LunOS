@@ -48,6 +48,7 @@ $(KERNEL_OBJS) \
 $(LIBS) \
 $(ARCHDIR)/boot/crt/crtend.o \
 $(ARCHDIR)/boot/crt/crtn.o \
+$(ARCHDIR)/interrupts/isr_stubs.o \
 
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S
