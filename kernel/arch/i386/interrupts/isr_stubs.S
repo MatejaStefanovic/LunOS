@@ -1,32 +1,32 @@
 .section .text
 
-    .extern isr_common_stub
+.extern isr_common_stub
 
-    .macro ISR_NOERR n
-    .global isr\n
-    isr\n:
-        cli                 # Disable interrupts
-        pushl $0            # Fake error code (0)
-        pushl $ \n          # Interrupt number (n)
-        jmp isr_common_stub # Jump to common handler
-    .endm
+.macro ISR_NOERR n
+.global isr\n
+isr\n:
+    cli                 # Disable interrupts
+    pushl $0            # Fake error code (0)
+    pushl $ \n          # Interrupt number (n)
+    jmp isr_common_stub # Jump to common handler
+.endm
 
-    .macro ISR_ERR n
-    .global isr\n
-    isr\n:
-        cli                 # Disable interrupts
-        pushl $ \n          # Interrupt number (n), error code is already on the stack
-        jmp isr_common_stub # Jump to common handler
-    .endm
+.macro ISR_ERR n
+.global isr\n
+isr\n:
+    cli                 # Disable interrupts
+    pushl $ \n          # Interrupt number (n), error code is already on the stack
+    jmp isr_common_stub # Jump to common handler
+.endm
 
 
-    # Define stubs for exceptions (0-31)
-    ISR_NOERR 0    # Divide-by-zero
-    ISR_NOERR 1    # Debug
-    ISR_NOERR 2    # NMI
-    ISR_NOERR 3    # Breakpoint
-    ISR_NOERR 4    # Overflow
-    ISR_ERR 14     # Page Fault (has real error code)
+# Define stubs for exceptions (0-31)
+ISR_NOERR 0    # Divide-by-zero
+ISR_NOERR 1    # Debug
+ISR_NOERR 2    # NMI
+ISR_NOERR 3    # Breakpoint
+ISR_NOERR 4    # Overflow
+ISR_ERR 14     # Page Fault (has real error code)
 
 .global isr_common_stub
 isr_common_stub:

@@ -12,7 +12,7 @@
  * is used to manage interrupt handlers*/
 typedef void (*isr_t)();  
 
-struct idt_entry{
+struct idt_entry_t{
     uint16_t offset_lower;
     uint16_t seg_selector;
     uint8_t  zero; // always 0, reserved by intel

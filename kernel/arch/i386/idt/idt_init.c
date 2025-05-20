@@ -1,6 +1,6 @@
 #include <kernel/idt_init.h>
 
-struct idt_entry idt[IDT_SIZE];
+struct idt_entry_t idt[IDT_SIZE];
 struct idt_ptr idtr;
 
 void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector, uint8_t flags){

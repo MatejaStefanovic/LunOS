@@ -1,7 +1,8 @@
 #include <kernel/gdt_init.h>
 
-struct gdt_entry gdt[NUM_OF_ENTRIES];
-struct tss_entry tss;
+struct gdt_entry_t gdt[NUM_OF_ENTRIES];
+struct tss_entry_t tss;
+
 void set_gdt_entry(int index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity){
     gdt[index].limit_lower  = limit & 0xFFFF; // Set bits 0-15
     gdt[index].base_lower   = base & 0xFFFF; // Set bits 0-15

@@ -1,0 +1,140 @@
+.
+├── build.sh
+├── clean.sh
+├── config.sh
+├── default-host.sh
+├── headers.sh
+├── isodir
+│   └── boot
+│       ├── grub
+│       │   └── grub.cfg
+│       └── LunOS.kernel
+├── iso.sh
+├── kernel
+│   ├── arch
+│   │   └── i386
+│   │       ├── boot
+│   │       │   ├── boot.d
+│   │       │   ├── boot.o
+│   │       │   ├── boot.S
+│   │       │   └── crt
+│   │       ├── gdt
+│   │       │   ├── gdt.d
+│   │       │   ├── gdt_init.c
+│   │       │   ├── gdt_init.d
+│   │       │   ├── gdt_init.o
+│   │       │   ├── gdt.o
+│   │       │   └── gdt.S
+│   │       ├── idt
+│   │       │   ├── idt_init.c
+│   │       │   └── idt.S
+│   │       ├── interrupts
+│   │       │   ├── exception_handlers.c
+│   │       │   ├── irq_handlers.c
+│   │       │   └── isr_stubs.S
+│   │       ├── linker.ld
+│   │       └── make.config
+│   ├── include
+│   │   └── kernel
+│   │       ├── bufferutils.h
+│   │       ├── exception_handlers.h
+│   │       ├── gdt_init.h
+│   │       ├── idt_init.h
+│   │       ├── irq_handlers.h
+│   │       ├── klogging.h
+│   │       └── tty.h
+│   ├── kernel
+│   │   ├── console
+│   │   │   ├── logging
+│   │   │   │   ├── klogging.c
+│   │   │   │   ├── klogging.d
+│   │   │   │   └── klogging.o
+│   │   │   └── tty
+│   │   │       ├── tty.c
+│   │   │       ├── tty.d
+│   │   │       ├── tty.o
+│   │   │       └── vga.h
+│   │   ├── kernel.c
+│   │   ├── kernel.d
+│   │   └── kernel.o
+│   ├── LunOS.kernel
+│   └── Makefile
+├── libc
+│   ├── arch
+│   │   └── i386
+│   │       └── make.config
+│   ├── errno
+│   │   ├── errno.c
+│   │   ├── errno.libk.d
+│   │   └── errno.libk.o
+│   ├── include
+│   │   ├── errno.h
+│   │   ├── stdio.h
+│   │   ├── stdlib.h
+│   │   ├── string.h
+│   │   └── sys
+│   │       └── cdefs.h
+│   ├── libk.a
+│   ├── Makefile
+│   ├── stdio
+│   │   ├── itoa.c
+│   │   ├── itoa.libk.d
+│   │   ├── itoa.libk.o
+│   │   ├── printf.c
+│   │   ├── printf.libk.d
+│   │   ├── printf.libk.o
+│   │   ├── putchar.c
+│   │   ├── putchar.libk.d
+│   │   ├── putchar.libk.o
+│   │   ├── puts.c
+│   │   ├── puts.libk.d
+│   │   └── puts.libk.o
+│   ├── stdlib
+│   │   ├── abort.c
+│   │   ├── abort.libk.d
+│   │   └── abort.libk.o
+│   └── string
+│       ├── memcmp.c
+│       ├── memcmp.libk.d
+│       ├── memcmp.libk.o
+│       ├── memcpy.c
+│       ├── memcpy.libk.d
+│       ├── memcpy.libk.o
+│       ├── memmove.c
+│       ├── memmove.libk.d
+│       ├── memmove.libk.o
+│       ├── memset.c
+│       ├── memset.libk.d
+│       ├── memset.libk.o
+│       ├── strlen.c
+│       ├── strlen.libk.d
+│       └── strlen.libk.o
+├── LunOS.iso
+├── myos.iso
+├── out.txt
+├── qemu.sh
+├── run.sh
+├── sysroot
+│   ├── boot
+│   │   └── LunOS.kernel
+│   └── usr
+│       ├── include
+│       │   ├── errno.h
+│       │   ├── kernel
+│       │   │   ├── bufferutils.h
+│       │   │   ├── exception_handlers.h
+│       │   │   ├── gdt_init.h
+│       │   │   ├── idt_init.h
+│       │   │   ├── irq_handlers.h
+│       │   │   ├── klogging.h
+│       │   │   └── tty.h
+│       │   ├── stdio.h
+│       │   ├── stdlib.h
+│       │   ├── string.h
+│       │   └── sys
+│       │       └── cdefs.h
+│       └── lib
+│           └── libk.a
+└── target-triplet-to-arch.sh
+
+34 directories, 104 files

@@ -14,7 +14,7 @@
 
 // Reminder, intel manual has GDT segement descriptor structure at 
 // vol 3 ch 3 or refer to osdev GDT page
-struct gdt_entry{
+struct gdt_entry_t{
     uint16_t limit_lower;
     uint16_t base_lower;
     uint8_t base_middle;
@@ -30,7 +30,7 @@ struct gdt_ptr{
 } __attribute__((packed));
 
 // Refer to intel manual for IA32 vol 3A chapter 7.2
-struct tss_entry{
+struct tss_entry_t{
      uint32_t previous_task_link; // Bits 16-31 are reserved
      uint32_t esp0;
      uint32_t ss0; // Bits 16-31 are reserved
