@@ -1,12 +1,29 @@
 #include <kernel/klogging.h>
 #include <kernel/tty.h>
 #include <kernel/bufferutils.h>
-#include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <utils.h>
 
-#define MAX_INT_DIGITS 12
+int ui32_to_hex_str(uint32_t val, char *str){
+    const char *hex_digits = "0123456789ABCDEF";
+    int index = 0;
+    if(!val)
+        str[index++] = '0';
 
+    while(val){
+        str[index++] = hex_digits[val & 0xF];
+        val >>= 4;
+    }
+    
+    str[index++] = 'x';
+    str[index++] = '0';
+   
+    str[index] = '\0';
+    reverse_str(str);
+
+    return index;
+}
 
 int kvsprintf(char *buf, const char* restrict format, va_list args){
     int len = 0;
@@ -45,7 +62,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
             }
             case 's': {
                 char *str = va_arg(args, char*); 
-                if(!BUFFER_SAFE_WRITE_STR(buf,len, KPRINTF_BUF_SIZE, str))
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, str))
                     return -EOVERFLOW;
                 
                 break;
@@ -57,6 +74,30 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                 if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, ch))
                     return -EOVERFLOW;
                 
+                break;
+            }
+            case 'p': {
+                void *ptr = va_arg(args, void *);
+                if(ptr == NULL){
+                   char msg[] = "0x0";
+                   if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, msg))
+                       return -EOVERFLOW;
+                   break;
+                }
+                uint32_t ptr_val = (uint32_t)ptr;
+                char hex_str[MAX_HEX_DIGITS]; 
+                ui32_to_hex_str(ptr_val, hex_str);
+
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
+                    return -EOVERFLOW;
+                break;
+            }
+            case 'x': {
+                uint32_t val = va_arg(args, uint32_t);
+                char hex_str[MAX_HEX_DIGITS];
+                ui32_to_hex_str(val, hex_str); 
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
+                    return -EOVERFLOW;
                 break;
             }
             default: { //Unknown format specifier will just be printed out  

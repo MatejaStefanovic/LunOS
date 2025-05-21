@@ -2,6 +2,7 @@
 #include <kernel/pic.h>
 #include <kernel/isr_handler.h>
 #include <string.h>
+
 struct idt_entry_t idt[IDT_SIZE];
 struct idt_ptr idtr;
 
@@ -15,15 +16,11 @@ void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector
     idt[entry_index].flags = flags;
 }
 
-void* memset(void* bufptr, int value, size_t size) {
-	unsigned char* buf = (unsigned char*) bufptr;
-	for (size_t i = 0; i < size; i++)
-		buf[i] = (unsigned char) value;
-	return bufptr;
-}
 void init_idt(){ 
     idtr.limit = sizeof(idt)-1;
     idtr.base = (uint32_t)&idt;
+   
+    memset(&idt, 0, sizeof(struct idt_entry_t)*256);
     
     pic_remap(0x20, 0x28); // remapped to 32 and 40 for slave and master PIC
                           

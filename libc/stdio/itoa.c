@@ -1,18 +1,5 @@
 #include <stdio.h> 
-#include <string.h>
-
-void str_reverse(char *str){
-    size_t end = strlen(str)-1;
-    size_t start = 0;
-    while(start < end){
-        char tmp = str[start];
-        str[start] = str[end];
-        str[end] = tmp;
-
-        ++start;
-        --end;
-    }
-}
+#include <utils.h>
 
 // Integer to ASCII that returns the length of the string
 int itoa(int i, char *str){
@@ -31,7 +18,7 @@ int itoa(int i, char *str){
         str[index++] = '-';
     
     str[index] = '\0';
-    str_reverse(str);
+    reverse_str(str);
    
     return index; // Index starts at 0 so total length is higher by 1
 }
