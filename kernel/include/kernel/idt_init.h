@@ -25,8 +25,8 @@ struct idt_ptr{
     uint32_t base;
 }__attribute__((packed));
 
-void setIdt(uint16_t, uint32_t);
-void create_gate_entry(uint8_t, isr_t, uint16_t, uint8_t);
+extern void setIdt(uint16_t limit, uint32_t base);
+void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector, uint8_t flags);
 void init_idt(void);
 
 #endif

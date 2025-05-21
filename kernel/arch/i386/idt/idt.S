@@ -1,5 +1,5 @@
 .section .data
-gdtr:
+idtr:
     .word 0
     .long 0
 

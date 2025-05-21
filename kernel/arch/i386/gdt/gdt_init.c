@@ -13,7 +13,7 @@ void set_gdt_entry(int index, uint32_t base, uint32_t limit, uint8_t access, uin
 }
 void create_tss_entry(){
     uint32_t base = (uint32_t)&tss;
-    uint32_t limit = sizeof(struct tss_entry);
+    uint32_t limit = sizeof(struct tss_entry_t);
     // TSS is a structured object, not just a range of memory like
     // other entries so we are required to put the actual address of the TSS
     // as base and limit as the size of our tss struct which is 104 bytes
@@ -42,7 +42,7 @@ void init_gdt(){
 
 
     struct gdt_ptr gdtr;
-    gdtr.limit = sizeof(struct gdt_entry) * NUM_OF_ENTRIES - 1; 
+    gdtr.limit = sizeof(struct gdt_entry_t) * NUM_OF_ENTRIES - 1; 
     gdtr.base = (uint32_t)&gdt; // address of the first entry which is null segment
 
     /* 

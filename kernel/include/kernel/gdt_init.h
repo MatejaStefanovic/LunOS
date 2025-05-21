@@ -23,7 +23,6 @@ struct gdt_entry_t{
     uint8_t base_high;    
 } __attribute__((packed));
 
-
 struct gdt_ptr{
     uint16_t limit; // size of GDT - 1
     uint32_t base;  // address of the first entry
@@ -60,12 +59,12 @@ struct tss_entry_t{
      uint16_t iomap_base_addr;
 } __attribute__((packed));
 
-extern struct tss_entry tss;
+extern struct tss_entry_t tss;
 
-extern void setGdt(uint16_t, uint32_t);
+extern void setGdt(uint16_t limit, uint32_t base);
 extern void reloadSegments(void);
 
-void set_gdt_entry(int, uint32_t, uint32_t, uint8_t, uint8_t);
+void set_gdt_entry(int index, uint32_t base, uint32_t limit , uint8_t access, uint8_t granularity);
 void create_tss_entry(void);
 void init_gdt(void);
 
