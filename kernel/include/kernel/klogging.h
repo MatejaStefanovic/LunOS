@@ -1,11 +1,11 @@
-#ifndef _KERNEL_LOGGING_H
-#define _KERNEL_LOGGING_H
+#ifndef __KERNEL_LOGGING_H
+#define __KERNEL_LOGGING_H
 
 #include <stdarg.h>
 
 #define KPRINTF_BUF_SIZE 1024
 // Function that formats the output string
-int kvsprintf(char *, const char* __restrict, va_list);
+int kvsprintf(char *buf, const char* __restrict, va_list args);
 
 /* Kernel print function to terminal
 __attribute__(format(printf,1,2)) tells the compiler
