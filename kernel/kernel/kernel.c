@@ -3,15 +3,16 @@
 #include <kernel/klogging.h>
 #include <kernel/idt_init.h>
 #include <kernel/isr_handler.h>
-#include <stdio.h>
-
+#include <kernel/paging.h>
 
 void kernel_main(void) {
     init_gdt(); // Set up GDT and reload segment buffers 
     init_idt(); // Set up IDT
     terminal_initialize(); // Set up VGA for text output  
-    
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
-    kprintf("                                   HELLO");
-    
+    kprintf("                                   HELLO\n");
+    kprintf("What happened in Monte Carlo happened...\n");
+    kprintf("What happened in Barcelona happened...\n");
+    kprintf("What happened in Madrdid happened and we are here, ");
+    kprintf("we're in Rome...");
 }
