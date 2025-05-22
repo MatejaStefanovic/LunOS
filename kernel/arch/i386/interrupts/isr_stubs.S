@@ -56,9 +56,9 @@ ISR_NOERR 31
 .global isr_common_stub
 isr_common_stub:
     pushl %eax               # Save eax
-    pushl %ebx               # Save ebx
     pushl %ecx               # Save ecx
-    pushl %edx               # Save ebx
+    pushl %edx               # Save edx
+    pushl %ebx               # Save ebx
     pushl %esp               # Save esp
     pushl %ebp               # Save ebp
     pushl %esi               # Save esi

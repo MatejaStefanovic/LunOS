@@ -3,20 +3,16 @@
 #include <kernel/klogging.h>
 #include <kernel/idt_init.h>
 #include <kernel/isr_handler.h>
-
-struct {
-    uint16_t limit;
-    uint32_t base;
-} __attribute__((packed)) idt_check;
+#include <kernel/paging.h>
 
 void kernel_main(void) {
-    
-    terminal_initialize(); // Set up VGA for text output  
     init_gdt(); // Set up GDT and reload segment buffers 
     init_idt(); // Set up IDT
-  
-    kprintf("%d", 5/0);
-    
-    //kprintf("hello");
-    
+    terminal_initialize(); // Set up VGA for text output  
+    kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
+    kprintf("                                   HELLO\n");
+    kprintf("What happened in Monte Carlo happened...\n");
+    kprintf("What happened in Barcelona happened...\n");
+    kprintf("What happened in Madrdid happened and we are here, ");
+    kprintf("we're in Rome...");
 }

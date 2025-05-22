@@ -39,15 +39,6 @@ $(ARCHDIR)/boot/crt/crtbegin.o \
 $(KERNEL_OBJS) \
 $(ARCHDIR)/boot/crt/crtend.o \
 $(ARCHDIR)/boot/crt/crtn.o \
-$(ARCHDIR)/interrupts/isr_stubs.o \
-$(ARCHDIR)/interrupts/isr_handler.o \
-$(ARCHDIR)/gdt/gdt.o \
-$(ARCHDIR)/gdt/gdt_init.o \
-$(ARCHDIR)/interrupts/isr_stubs.o \
-$(ARCHDIR)/interrupts/isr_handler.o \
-$(ARCHDIR)/pic/pic.o \
-$(ARCHDIR)/idt/idt.o \
-$(ARCHDIR)/idt/idt_init.o \
 
 LINK_LIST=\
 $(LDFLAGS) \
@@ -57,13 +48,6 @@ $(KERNEL_OBJS) \
 $(LIBS) \
 $(ARCHDIR)/boot/crt/crtend.o \
 $(ARCHDIR)/boot/crt/crtn.o \
-$(ARCHDIR)/gdt/gdt.o \
-$(ARCHDIR)/gdt/gdt_init.o \
-$(ARCHDIR)/interrupts/isr_stubs.o \
-$(ARCHDIR)/interrupts/isr_handler.o \
-$(ARCHDIR)/pic/pic.o \
-$(ARCHDIR)/idt/idt.o \
-$(ARCHDIR)/idt/idt_init.o \
 
 
 .PHONY: all clean install install-headers install-kernel
