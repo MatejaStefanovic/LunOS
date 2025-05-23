@@ -55,10 +55,10 @@ _start:
 
 1:
 	# Only map the kernel.
-	cmpl $_kernel_start, %esi
+	cmpl $_kernel_start_phys, %esi
 	jl 2f
-	cmpl $(_kernel_end - 0xC0000000), %esi
-	jge 3f
+	cmpl $(_kernel_end_virt - 0xC0000000), %esi
+	jge .read_write
     
     cmpl $_protected_seg_start, %esi
     jl .read_write
@@ -126,7 +126,9 @@ _start:
 
 	# Set up the stack.
 	mov $stack_top, %esp
-
+    
+    # Push information address to the stack 
+    pushl %ebx
 	# Enter the high-level kernel.
 	call kernel_main
 

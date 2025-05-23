@@ -2,13 +2,13 @@ ENTRY (_start)
 
 SECTIONS
 {
-        . = 0x00100000;
+    . = 0x00100000;
 	/* The kernel will live at 3GB + 1MB in the virtual address space, */
 	/* which will be mapped to 1MB in the physical address space. */
 	/* Note that we page-align the sections. */
+   
+	_kernel_start_phys = .;
 
-	_kernel_start = .;
-       
     .multiboot_header : {
         *(.multiboot_header)
     }
@@ -20,6 +20,7 @@ SECTIONS
 	/* Add a symbol that indicates the start address of the kernel. */
 	. += 0xC0000000;
 
+	_kernel_start_virt = .;
     _protected_seg_start = .;
 	.text ALIGN (4K) : AT (ADDR (.text) - 0xC0000000)
 	{
@@ -42,5 +43,6 @@ SECTIONS
 		*(.bootstrap_stack)
 	}
 	/* Add a symbol that indicates the end address of the kernel. */
-	_kernel_end = .;
+	_kernel_end_virt = .;
+    _kernel_end_phys = _kernel_end_virt - 0xC0000000;
 }
