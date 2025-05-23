@@ -8,13 +8,14 @@ SECTIONS
 	/* Note that we page-align the sections. */
 
 	_kernel_start = .;
-        .multiboot.data : {
-            *(.multiboot.data)
-        }
-
-       .multiboot.text : {
-           *(.multiboot.text)
-       }
+       
+    .multiboot_header : {
+        *(.multiboot_header)
+    }
+    
+    .multiboot.text : {
+        *(.multiboot.text)
+    }
 
 	/* Add a symbol that indicates the start address of the kernel. */
 	. += 0xC0000000;

@@ -1,16 +1,24 @@
-# Declare constants for the multiboot header.
-.set ALIGN,    1<<0             # align loaded modules on page boundaries
-.set MEMINFO,  1<<1             # provide memory map
-.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
-.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
-.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+.section .multiboot_header
+.align 8
+multiboot_header_start:
 
-# Declare a multiboot header that marks the program as a kernel.
-.section .multiboot.data, "aw"
-.align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+    .long 0xE85250D6                       # magic number
+    .long 0x00000000                       # architecture (0 = i386)
+    .long multiboot_header_end - multiboot_header_start # header length
+    .long -(0xE85250D6 + 0 + (multiboot_header_end - multiboot_header_start)) # checksum
+
+    .long 6                               # ALIGN_MODULE tag type
+    .long 16                              # tag size
+    .long 0x1000                          # 4KB alignment
+    .long 0                              # reserved
+
+    .long 4                               # MEMORY_INFO tag type
+    .long 8                               # tag size
+
+    .long 0                               # END tag type
+    .long 8                               # tag size
+
+multiboot_header_end:
 
 # Allocate the initial stack.
 .section .bootstrap_stack, "aw", @nobits
