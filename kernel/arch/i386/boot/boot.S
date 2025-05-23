@@ -1,22 +1,26 @@
+#define ASM_FILE
+#include <kernel/multiboot2.h>
 .section .multiboot_header
 .align 8
 multiboot_header_start:
 
-    .long 0xE85250D6                       # magic number
-    .long 0x00000000                       # architecture (0 = i386)
-    .long multiboot_header_end - multiboot_header_start # header length
-    .long -(0xE85250D6 + 0 + (multiboot_header_end - multiboot_header_start)) # checksum
+    .long MULTIBOOT2_HEADER_MAGIC                       # magic number
+    .long MULTIBOOT_ARCHITECTURE_I386                   # architecture (0 = i386)
+    .long multiboot_header_end - multiboot_header_start # header length 
+    .long -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot_header_end - multiboot_header_start)) # checksum
 
-    .long 6                               # ALIGN_MODULE tag type
-    .long 16                              # tag size
-    .long 0x1000                          # 4KB alignment
-    .long 0                              # reserved
+    .word MULTIBOOT_HEADER_TAG_MODULE_ALIGN         # ALIGN_MODULE tag type
+    .word 0                                         # flags 
+    .long 8                                         # tag size
 
-    .long 4                               # MEMORY_INFO tag type
-    .long 8                               # tag size
+    .word MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST  # INFO_REQ tag type
+    .word 0                                         # flags
+    .long 12                                        # tag size
+    .word MULTIBOOT_TAG_TYPE_MMAP
 
-    .long 0                               # END tag type
-    .long 8                               # tag size
+    .word MULTIBOOT_HEADER_TAG_END                  # END tag 
+    .word 0                                         # flags
+    .long 8                                         # tag size
 
 multiboot_header_end:
 
