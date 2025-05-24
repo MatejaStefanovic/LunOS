@@ -127,12 +127,29 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                     if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, ul_str))
                         return -EOVERFLOW;
                     break;
-                }        
+                }
+                if(*format == 'x'){
+                    ++format;
+                    uint32_t val = va_arg(args, uint32_t);
+                    char hex_str[MAX_HEX_DIGITS];
+                    ui32_to_hex_str(val, hex_str); 
+                    if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
+                        return -EOVERFLOW;
+                    break;
+                }
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, "%l") ||
                     !BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, *format++))
                     return -EOVERFLOW;
                 break;
-            }    
+            }
+            case 'u': {
+                unsigned int val = va_arg(args, unsigned int);
+                char ul_str[32];
+                ul_to_str(val, ul_str);
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, ul_str))
+                    return -EOVERFLOW;
+                break;
+            }
             default: { //Unknown format specifier will just be printed out  
                 if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, '%') ||
                     !BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch))

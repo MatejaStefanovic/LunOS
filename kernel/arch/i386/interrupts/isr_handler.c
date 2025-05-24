@@ -2,7 +2,7 @@
 #include <kernel/klogging.h>
 
 void decode_page_fault_error(uint32_t err_code) {
-    kprintf("ERROR: Page fault occured, error code: 0x%x\n", err_code);
+    kprintf("Error code: 0x%lx\n", err_code);
 
     if (err_code & 0x1)
         kprintf(" - Protection Violation (page present) -\n");
@@ -28,15 +28,19 @@ void decode_page_fault_error(uint32_t err_code) {
 
 void isr0_divide_by_zero(struct regs_t *r){
     kprintf("EXCEPTION: Divide by zero\n");
-    kprintf("Division happened at address: 0x%x", r->eip);
+    kprintf("Division happened at address: 0x%lx", r->eip);
     kprintf("\n");
 
     for(;;);
 }
 
 void isr14_page_fault(struct regs_t *r){
-    kprintf("Page fault occurred at address: %x\n", r->cr2);
+    kprintf("ERROR: page fault occurred at address: %lx\n", r->cr2);
     decode_page_fault_error(r->err_code);
+}
+
+void isr_reserved(){
+    kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
 void isr_dispatch(struct regs_t *r){
     switch (r->int_no){
@@ -47,6 +51,17 @@ void isr_dispatch(struct regs_t *r){
         case 14: // Page fault
             isr14_page_fault(r);
             break;
+        
+        case 15:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 27:
+        case 31:
+           isr_reserved();
+           break;
         default:
         case 1:
         case 2:
@@ -61,23 +76,15 @@ void isr_dispatch(struct regs_t *r){
         case 11:
         case 12:
         case 13:
-        case 15:
         case 16:
         case 17:
         case 18:
         case 19:
         case 20:
         case 21:
-        case 22:
-        case 23:
-        case 24:
-        case 25:
-        case 26:
-        case 27:
         case 28:
         case 29: 
         case 30:
-        case 31:
             kprintf("isr%lu", r->int_no);
             for(;;);
             break;
