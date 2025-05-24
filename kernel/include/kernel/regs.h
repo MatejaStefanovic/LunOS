@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-struct regs_t {// Pushed by pusha (order reversed to match stack layout)
+struct regs_t {
+    // Pushed by pusha (order reversed to match stack layout)
     uint32_t edi, esi, ebp, esp;
     uint32_t ebx, edx, ecx, eax;
 

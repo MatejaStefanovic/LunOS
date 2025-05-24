@@ -1,33 +1,51 @@
 #include <kernel/isr_handler.h>
 #include <kernel/klogging.h>
 
-void print_hex(uint32_t value) {
-    // We'll print 8 digits for a 32-bit value
-    char hex_digits[] = "0123456789abcdef";
-    char buffer[9];  // To hold the hex string + null terminator
+void decode_page_fault_error(uint32_t err_code) {
+    kprintf("ERROR: Page fault occured, error code: 0x%x\n", err_code);
 
-    buffer[8] = '\0';  // Null-terminate the string
+    if (err_code & 0x1)
+        kprintf(" - Protection Violation (page present) -\n");
+    else
+        kprintf(" - Page Not Present -\n");
 
-    for (int i = 7; i >= 0; --i) {
-        buffer[i] = hex_digits[value & 0xF];  // Get the last hex digit
-        value >>= 4;  // Shift the value 4 bits to the right
-    }
+    if (err_code & 0x2)
+        kprintf(" - Fault caused by Write -\n");
+    else
+        kprintf(" - Fault caused by Read -\n");
 
-    kprintf("0x%s", buffer);  // Print the result, e.g., "0x00001a3f"
+    if (err_code & 0x4)
+        kprintf(" - Fault in User Mode -\n");
+    else
+        kprintf(" - Fault in Supervisor Mode -\n");
+
+    if (err_code & 0x8)
+        kprintf(" - Reserved Bit Violation -\n");
+
+    if (err_code & 0x10)
+        kprintf(" - Instruction Fetch Fault -\n");
 }
 
-void isr0_divide_by_zero(){
-    kprintf("EXCEPTION: Divide by zero");
+void isr0_divide_by_zero(struct regs_t *r){
+    kprintf("EXCEPTION: Divide by zero\n");
+    kprintf("Division happened at address: 0x%x", r->eip);
     kprintf("\n");
 
     for(;;);
 }
 
+void isr14_page_fault(struct regs_t *r){
+    kprintf("Page fault occurred at address: %x\n", r->cr2);
+    decode_page_fault_error(r->err_code);
+}
 void isr_dispatch(struct regs_t *r){
     switch (r->int_no){
         // 0 - 32 - Exception handlers
         case 0: 
-            isr0_divide_by_zero();
+            isr0_divide_by_zero(r);
+            break;
+        case 14: // Page fault
+            isr14_page_fault(r);
             break;
         default:
         case 1:
@@ -43,7 +61,6 @@ void isr_dispatch(struct regs_t *r){
         case 11:
         case 12:
         case 13:
-        case 14: // Page fault
         case 15:
         case 16:
         case 17:

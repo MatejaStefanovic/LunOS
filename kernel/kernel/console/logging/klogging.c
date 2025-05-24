@@ -10,6 +10,7 @@ int ui32_to_hex_str(uint32_t val, char *str){
     int index = 0;
     if(val == 0){
         str[index++] = '0';
+        str[index] = '\0';
         return index;        
     }
 

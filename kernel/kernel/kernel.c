@@ -39,15 +39,15 @@ void kernel_main(unsigned long magic, unsigned long addr) {
         multiboot_memory_map_t *mmap;
       
         kprintf ("mmap_addr = 0x%x, mmap_length = 0x%x\n",
-              (unsigned) mbi->mmap_addr + KERNEL_VIRTUAL_BASE, 
-              (unsigned) mbi->mmap_length + KERNEL_VIRTUAL_BASE);
+              (unsigned) mbi->mmap_addr, 
+              (unsigned) mbi->mmap_length);
 
         unsigned long mmap_phys_start = mbi->mmap_addr;
         unsigned long mmap_phys_end = mbi->mmap_addr + mbi->mmap_length;
         unsigned long current_phys = mmap_phys_start;
 
         while (current_phys < mmap_phys_end) {
-            multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)(current_phys + KERNEL_VIRTUAL_BASE);
+            multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)(current_phys );
         
             kprintf (" size = 0x%x, base_addr = 0x%x%x,"
                 " length = 0x%x%x, type = 0x%x\n",
@@ -61,3 +61,61 @@ void kernel_main(unsigned long magic, unsigned long addr) {
         }
     }
 }
+
+/*
+ *
+ *
+    cli
+    pusha
+
+    mov 16(%esp), %eax    # Get CS pushed by CPU (after pusha, error code, int_no)
+    test $3, %ax
+    jz .no_user_stack     # If CPL=0, no user stack frame
+
+    # User mode interrupt: push user SS and ESP saved by CPU automatically
+    pushl 20(%esp)        # push user esp (from old stack frame)
+    pushl 20(%esp)        # push user ss (from old stack frame)
+.no_user_stack:
+
+    # Push error code and int_no done by ISR macros before jumping here
+
+    movl %ds, %eax
+    pushl %eax
+
+    movl %cr2, %eax
+    pushl %eax
+
+    # Set segment registers to kernel DS
+    mov $0x10, %ax
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
+
+    pushl %esp           # Push pointer to regs_t struct on stack
+    call isr_dispatch    # Your C handler
+    addl $4, %esp        # Clean up stack
+
+    # Restore segment registers
+    popl %eax
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
+
+    popa
+
+    # If user stack was pushed, pop it off
+    test $3, 16(%esp)    # check cs again
+    jnz .pop_user_stack
+    jmp .skip_user_stack
+
+.pop_user_stack:
+    addl $8, %esp        # pop ss, esp from stack
+
+.skip_user_stack:
+
+    sti
+    iret
+ * 
+ * */
