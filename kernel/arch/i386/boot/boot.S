@@ -1,28 +1,16 @@
-#define ASM_FILE
-#include <kernel/multiboot2.h>
-.section .multiboot_header
-.align 8
-multiboot_header_start:
+# Declare constants for the multiboot header.
+.set ALIGN,    1<<0             # align loaded modules on page boundaries
+.set MEMINFO,  1<<1             # provide memory map
+.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
+.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
+.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
 
-    .long MULTIBOOT2_HEADER_MAGIC                       # magic number
-    .long MULTIBOOT_ARCHITECTURE_I386                   # architecture (0 = i386)
-    .long multiboot_header_end - multiboot_header_start # header length 
-    .long -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot_header_end - multiboot_header_start)) # checksum
-
-    .word MULTIBOOT_HEADER_TAG_MODULE_ALIGN         # ALIGN_MODULE tag type
-    .word 0                                         # flags 
-    .long 8                                         # tag size
-
-    .word MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST  # INFO_REQ tag type
-    .word 0                                         # flags
-    .long 12                                        # tag size
-    .word MULTIBOOT_TAG_TYPE_MMAP
-
-    .word MULTIBOOT_HEADER_TAG_END                  # END tag 
-    .word 0                                         # flags
-    .long 8                                         # tag size
-
-multiboot_header_end:
+# Declare a multiboot header that marks the program as a kernel.
+.section .multiboot.data, "aw"
+.align 4
+.long MAGIC
+.long FLAGS
+.long CHECKSUM
 
 # Allocate the initial stack.
 .section .bootstrap_stack, "aw", @nobits
@@ -55,9 +43,9 @@ _start:
 
 1:
 	# Only map the kernel.
-	cmpl $_kernel_start_phys, %esi
+	cmpl $_kernel_start, %esi
 	jl 2f
-	cmpl $(_kernel_end_virt - 0xC0000000), %esi
+	cmpl $(_kernel_end - 0xC0000000), %esi
 	jge .read_write
     
     cmpl $_protected_seg_start, %esi
@@ -129,6 +117,8 @@ _start:
     
     # Push information address to the stack 
     pushl %ebx
+    # Push magic number
+    pushl %eax
 	# Enter the high-level kernel.
 	call kernel_main
 

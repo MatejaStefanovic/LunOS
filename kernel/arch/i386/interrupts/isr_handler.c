@@ -29,6 +29,7 @@ void isr_dispatch(struct regs_t *r){
         case 0: 
             isr0_divide_by_zero();
             break;
+        default:
         case 1:
         case 2:
         case 3:
@@ -60,7 +61,7 @@ void isr_dispatch(struct regs_t *r){
         case 29: 
         case 30:
         case 31:
-            kprintf("isr%d", (int)r->int_no);
+            kprintf("isr%lu", r->int_no);
             for(;;);
             break;
 
