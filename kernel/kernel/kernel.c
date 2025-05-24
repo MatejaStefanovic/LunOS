@@ -259,20 +259,15 @@ void kernel_main(unsigned long magic, unsigned long addr) {
     init_idt(); // Set up IDT
     terminal_initialize(); // Set up VGA for text output 
     
-    __asm__ __volatile__ (
-        "mov $1, %eax\n"
-        "xor %edx, %edx\n"
-        "mov $0, %ecx\n"
-        "div %ecx\n"             // Triggers divide-by-zero (int 0)
-    );
     kprintf("magic = 0x%x\n addr = 0x%x\n", magic, addr);
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
     kprintf("                                   HELLO\n");
     kprintf("What happened in Monte Carlo happened...\n");
     kprintf("What happened in Barcelona happened...\n");
     kprintf("What happened in Madrdid happened and we are here, ");
-    kprintf("we're in Rome...");
-
+    kprintf("we're in Rome...\n");
+    
+    addr+= KERNEL_VIRTUAL_BASE;
     multiboot_info_t *mbi;
     mbi = (multiboot_info_t *) addr;
 
