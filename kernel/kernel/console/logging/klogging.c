@@ -8,23 +8,41 @@
 int ui32_to_hex_str(uint32_t val, char *str){
     const char *hex_digits = "0123456789ABCDEF";
     int index = 0;
-    if(!val)
+    if(val == 0){
         str[index++] = '0';
+        str[index] = '\0';
+        return index;        
+    }
 
-    while(val){
+    while(val > 0){
         str[index++] = hex_digits[val & 0xF];
         val >>= 4;
     }
     
-    str[index++] = 'x';
-    str[index++] = '0';
+    //str[index++] = 'x';
+    //str[index++] = '0';
    
     str[index] = '\0';
     reverse_str(str);
 
     return index;
 }
+int ul_to_str(unsigned long value, char *str) {
+    int i = 0;
 
+    // Handle zero explicitly
+    if (value == 0) {
+        str[i++] = '0';
+    } else {
+        while (value > 0) {
+            str[i++] = '0' + (value % 10);
+            value /= 10;
+        }
+    }
+    str[i] = '\0';
+    reverse_str(str);
+    return i;
+}
 int kvsprintf(char *buf, const char* restrict format, va_list args){
     int len = 0;
     while(*format){
@@ -97,6 +115,38 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                 char hex_str[MAX_HEX_DIGITS];
                 ui32_to_hex_str(val, hex_str); 
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
+                    return -EOVERFLOW;
+                break;
+            }
+            case 'l': {
+                if(*format == 'u'){
+                    ++format;
+                    unsigned long val = va_arg(args, unsigned long);
+                    char ul_str[32];
+                    ul_to_str(val, ul_str);
+                    if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, ul_str))
+                        return -EOVERFLOW;
+                    break;
+                }
+                if(*format == 'x'){
+                    ++format;
+                    uint32_t val = va_arg(args, uint32_t);
+                    char hex_str[MAX_HEX_DIGITS];
+                    ui32_to_hex_str(val, hex_str); 
+                    if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
+                        return -EOVERFLOW;
+                    break;
+                }
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, "%l") ||
+                    !BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, *format++))
+                    return -EOVERFLOW;
+                break;
+            }
+            case 'u': {
+                unsigned int val = va_arg(args, unsigned int);
+                char ul_str[32];
+                ul_to_str(val, ul_str);
+                if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, ul_str))
                     return -EOVERFLOW;
                 break;
             }

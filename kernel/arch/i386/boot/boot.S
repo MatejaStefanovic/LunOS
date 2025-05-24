@@ -42,27 +42,24 @@ _start:
 	movl $1023, %ecx
 
 1:
-	# Only map the kernel.
-	cmpl $_kernel_start, %esi
-	jl 2f
-	cmpl $(_kernel_end - 0xC0000000), %esi
-	jge 3f
-    
-    cmpl $_protected_seg_start, %esi
-    jl .read_write
-    cmpl $_protected_seg_end, %esi
-    jl .readonly
-
-.readonly:     
+ # Clear lower 12 bits of ESI
     movl %esi, %edx
-	orl $0x003, %edx
-	movl %edx, (%edi)
+    andl $0xFFFFF000, %edx
+
+    # Check if ESI is in readonly range
+    cmpl $_protected_seg_start, %esi
+    jl .read_write        # esi < start → writable
+    cmpl $_protected_seg_end, %esi
+    jge .read_write       # esi >= end → writable
+
+.readonly:
+    orl $0x001, %edx      # Present only (read-only)
+    movl %edx, (%edi)
     jmp 2f
 
 .read_write:
-    movl %esi, %edx
-	orl $0x003, %edx
-	movl %edx, (%edi)
+    orl $0x003, %edx      # Present + writable
+    movl %edx, (%edi)
 
 2:
 	# Size of page is 4096 bytes.
@@ -114,7 +111,11 @@ _start:
 
 	# Set up the stack.
 	mov $stack_top, %esp
-
+    
+    # Push information address to the stack 
+    pushl %ebx
+    # Push magic number
+    pushl %eax
 	# Enter the high-level kernel.
 	call kernel_main
 

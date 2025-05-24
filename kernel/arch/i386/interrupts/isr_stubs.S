@@ -55,15 +55,7 @@ ISR_NOERR 31
 
 .global isr_common_stub
 isr_common_stub:
-    pushl %eax               # Save eax
-    pushl %ecx               # Save ecx
-    pushl %edx               # Save edx
-    pushl %ebx               # Save ebx
-    pushl %esp               # Save esp
-    pushl %ebp               # Save ebp
-    pushl %esi               # Save esi
-    pushl %edi               # Save edi
-
+    pusha 
     movl %ds, %eax 
     pushl %eax
     movl %cr2, %eax
@@ -77,7 +69,7 @@ isr_common_stub:
     
     pushl %esp
     call isr_dispatch       # Call the C function isr_dispatch(struct regs_t r*)
-    addl $8, %esp           # Clean up stack after the call to isr_dispatch
+    addl $4, %esp           # Clean up stack after the call to isr_dispatch
     
     popl %ebx
     movw %bx, %ds
@@ -85,18 +77,8 @@ isr_common_stub:
     movw %bx, %fs
     movw %bx, %gs
 
-    popl %edi
-    popl %esi
-    popl %ebp
-    addl $4, %esp     # skip restoring original %esp — just discard it
-    popl %edx
-    popl %ecx
-    popl %ebx
-    popl %eax
+    popa
+    addl $8, %esp    
 
-    addl $8, %esp           # Clean up the error code and interrupt number
     sti                     # Re-enable interrupts
     iret                    # Return from interrupt
-
-
-
