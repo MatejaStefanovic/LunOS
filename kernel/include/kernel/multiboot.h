@@ -67,6 +67,9 @@
 #define MULTIBOOT_INFO_VBE_INFO                 0x00000800
 #define MULTIBOOT_INFO_FRAMEBUFFER_INFO         0x00001000
 
+#define KERNEL_VIRTUAL_BASE 0xC0000000
+#define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
+
 #ifndef ASM_FILE
 
 typedef unsigned char           multiboot_uint8_t;
