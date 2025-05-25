@@ -114,8 +114,6 @@ _start:
     
     # Push information address to the stack 
     pushl %ebx
-    # Push magic number
-    pushl %eax
 	# Enter the high-level kernel.
 	call kernel_main
 
