@@ -11,17 +11,17 @@ int ui32_to_hex_str(uint32_t val, char *str){
     if(val == 0){
         str[index++] = '0';
         str[index] = '\0';
-        return index;        
+        return index;
     }
 
     while(val > 0){
         str[index++] = hex_digits[val & 0xF];
         val >>= 4;
     }
-    
+
     //str[index++] = 'x';
     //str[index++] = '0';
-   
+
     str[index] = '\0';
     reverse_str(str);
 
@@ -47,19 +47,19 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
     int len = 0;
     while(*format){
         char curr_ch = *format++;
-        
+
         // Not format specified -> add to buffer
         if(curr_ch != '%'){
-            if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch)) 
+            if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch))
                 return -EOVERFLOW;
-                            
+
             continue;
         }
         // Handle %% case
         if(*format == '%'){
-            if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch)) 
+            if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch))
                 return -EOVERFLOW;
-            
+
             ++format; // Necessary to go over the second % to not include it twice
             continue;
         }
@@ -71,27 +71,27 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                 char num_buf[MAX_INT_DIGITS]; // Enough digits for 32 bit int
                 int int_str_len = itoa(val, num_buf);
 
-                for(int i = 0; i < int_str_len; ++i){        
-                    if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, num_buf[i])) 
+                for(int i = 0; i < int_str_len; ++i){
+                    if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, num_buf[i]))
                         return -EOVERFLOW;
                 }
-                
+
                 break;
             }
             case 's': {
-                char *str = va_arg(args, char*); 
+                char *str = va_arg(args, char*);
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, str))
                     return -EOVERFLOW;
-                
+
                 break;
             }
             case 'c': {
                 /* Smaller types promote to int when there is an unknown
                  * amount of variables therefore it is needed to look for int */
-                char ch = va_arg(args, int); 
+                char ch = va_arg(args, int);
                 if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, ch))
                     return -EOVERFLOW;
-                
+
                 break;
             }
             case 'p': {
@@ -102,8 +102,8 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                        return -EOVERFLOW;
                    break;
                 }
-                uint32_t ptr_val = (uint32_t)ptr;
-                char hex_str[MAX_HEX_DIGITS]; 
+                uint64_t ptr_val = (uint64_t)ptr;
+                char hex_str[MAX_HEX_DIGITS];
                 ui32_to_hex_str(ptr_val, hex_str);
 
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
@@ -113,7 +113,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
             case 'x': {
                 uint32_t val = va_arg(args, uint32_t);
                 char hex_str[MAX_HEX_DIGITS];
-                ui32_to_hex_str(val, hex_str); 
+                ui32_to_hex_str(val, hex_str);
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
                     return -EOVERFLOW;
                 break;
@@ -132,7 +132,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                     ++format;
                     uint32_t val = va_arg(args, uint32_t);
                     char hex_str[MAX_HEX_DIGITS];
-                    ui32_to_hex_str(val, hex_str); 
+                    ui32_to_hex_str(val, hex_str);
                     if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
                         return -EOVERFLOW;
                     break;
@@ -150,11 +150,11 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                     return -EOVERFLOW;
                 break;
             }
-            default: { //Unknown format specifier will just be printed out  
+            default: { //Unknown format specifier will just be printed out
                 if(!BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, '%') ||
                     !BUFFER_SAFE_WRITE_CH(buf, len, KPRINTF_BUF_SIZE, curr_ch))
                     return -EOVERFLOW;
-                
+
                 break;
             }
         }
@@ -164,10 +164,10 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
 
 void kprintf(const char* restrict format, ...){
     char buf[KPRINTF_BUF_SIZE];
-     
+
     va_list args;
     va_start(args, format);
-    
+
     int out_len = kvsprintf(buf, format, args);
 
     va_end(args);
@@ -176,6 +176,6 @@ void kprintf(const char* restrict format, ...){
         terminal_writestring("Error: Buffer overflow - data exceeds the allowed buffer size of 1024 bytes.");
         return;
     }
-    
+
     terminal_write(buf, out_len);
 }

@@ -4,12 +4,12 @@
 #include <string.h>
 
 #include <kernel/tty.h>
-
 #include "vga.h"
+#include <kernel/limine.h>
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xC03FF000;
+static uint16_t* const VGA_MEMORY = (uint16_t*) 0xFFFF8000000B8000;
 
 static size_t terminal_row;
 static size_t terminal_column;
@@ -24,7 +24,7 @@ void terminal_initialize(void) {
 	for (size_t y = 0; y < VGA_HEIGHT; y++) {
 		for (size_t x = 0; x < VGA_WIDTH; x++) {
 			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = vga_entry(' ', terminal_color);
+			terminal_buffer[index] = vga_entry('a', VGA_COLOR_RED);
 		}
 	}
 }
@@ -71,14 +71,14 @@ void terminal_putchar(char c) {
     }
 
 	terminal_putentryat(uc, terminal_color, terminal_column, terminal_row);
-	if (++terminal_column != VGA_WIDTH) 
+	if (++terminal_column != VGA_WIDTH)
         return;
 
 	terminal_column = 0;
-	
+
     if (++terminal_row == VGA_HEIGHT)
 		terminal_scroll();
-	
+
 }
 
 void terminal_write(const char* data, size_t size) {

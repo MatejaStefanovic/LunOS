@@ -2,5 +2,11 @@
 set -e
 . ./iso.sh
 
-#qemu-system-$(./target-triplet-to-arch.sh $HOST) -s -d cpu_reset -cdrom LunOS.iso
-qemu-system-$(./target-triplet-to-arch.sh $HOST) -cdrom LunOS.iso
+# Use qemu-system-x86_64 for x86_64 architecture
+# Add more memory and enable KVM if available for better performance
+#qemu-system-x86_64 -cdrom LunOS.iso -m 512M -enable-kvm 2>/dev/null || \
+#qemu-system-x86_64 -cdrom LunOS.iso -m 512M -monitor stdio
+qemu-system-x86_64 -cdrom LunOS.iso -m 512M
+
+# Alternative with debugging (uncomment if needed)
+#qemu-system-x86_64 -s -d cpu_reset -cdrom LunOS.iso -m 512M
