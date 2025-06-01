@@ -32,8 +32,8 @@ void kernel_main() {
 
     // Clear screen and draw test
     fb_clear(0x000000);  // Clear to black
-    fb_draw_diagonal(0xFFFFFF, 5000);  // White diagonal line
-
+    fb_put_string("Hello, World!", 10, 10, 0xFFFFFF, 0x000000);  // White text
+    fb_put_string("This is line 2", 10, 20, 0xFF0000, 0x000000);
     //init_gdt(); // Set up GDT and reload segment buffers
     //init_idt(); // Set up IDT
 
