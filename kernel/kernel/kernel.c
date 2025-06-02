@@ -29,18 +29,11 @@ void kernel_main() {
     if(!fb_init())
         hcf();
 
-
-    // Clear screen and draw test
-    fb_clear(0x000000);  // Clear to black
-    terminal_initialize();
-    kprintf("HELLO\n\n");
-    char buf[160];
-    for(int i = 0; i < 160; ++i)
-        buf[i] = 'a';
-    for(int i = 0; i < 85; ++i)
-        terminal_writestring(buf);
     //init_gdt(); // Set up GDT and reload segment buffers
     //init_idt(); // Set up IDT
+    
+    fb_clear(0x000000);  // Clear to black
+    terminal_initialize();
 
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
     kprintf("                                   HELLO\n");
@@ -48,6 +41,5 @@ void kernel_main() {
     kprintf("What happened in Barcelona happened...\n");
     kprintf("What happened in Madrdid happened and we are here, ");
     kprintf("we're in Rome...\n");
- 
     //parse_multiboot_mem_info(addr);
 }
