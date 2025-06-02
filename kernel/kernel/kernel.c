@@ -4,11 +4,11 @@
 #include <kernel/isr_handler.h>
 #include <kernel/paging.h>
 #include <kernel/pma.h>
+*/
 
+#include <kernel/framebuffer.h>
 #include <kernel/tty.h>
 #include <kernel/klogging.h>
-*/
-#include <kernel/framebuffer.h>
 
 // Set the base revision to 3
 __attribute__((used, section(".limine_requests")))
@@ -32,19 +32,22 @@ void kernel_main() {
 
     // Clear screen and draw test
     fb_clear(0x000000);  // Clear to black
-    fb_put_string("Hello, World!", 10, 10, 0xFFFFFF, 0x000000);  // White text
-    fb_put_string("This is line 2", 10, 20, 0xFF0000, 0x000000);
+    terminal_initialize();
+    kprintf("HELLO\n\n");
+    char buf[160];
+    for(int i = 0; i < 160; ++i)
+        buf[i] = 'a';
+    for(int i = 0; i < 85; ++i)
+        terminal_writestring(buf);
     //init_gdt(); // Set up GDT and reload segment buffers
     //init_idt(); // Set up IDT
 
-/*
-    terminal_initialize();
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
     kprintf("                                   HELLO\n");
     kprintf("What happened in Monte Carlo happened...\n");
     kprintf("What happened in Barcelona happened...\n");
     kprintf("What happened in Madrdid happened and we are here, ");
     kprintf("we're in Rome...\n");
-*/
+ 
     //parse_multiboot_mem_info(addr);
 }

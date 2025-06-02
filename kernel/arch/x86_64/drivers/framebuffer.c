@@ -1,5 +1,4 @@
 #include <kernel/framebuffer.h>
-#include <kernel/tty_font.h>
 
 static struct limine_framebuffer *primary_fb = NULL;
 

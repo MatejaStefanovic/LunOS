@@ -27,7 +27,8 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 kernel/kernel.o \
-#kernel/console/logging/klogging.o \
+kernel/console/tty/tty.o \
+kernel/console/logging/klogging.o \
 
 OBJS=\
 $(KERNEL_OBJS) \

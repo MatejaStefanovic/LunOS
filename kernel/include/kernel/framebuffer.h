@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <kernel/limine_requests.h>
+#include <kernel/tty_font.h>
 
 struct limine_framebuffer *fb_get(void);
 
