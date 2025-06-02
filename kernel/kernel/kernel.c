@@ -1,10 +1,10 @@
 /*
 #include <kernel/gdt_init.h>
-#include <kernel/idt_init.h>
 #include <kernel/isr_handler.h>
 #include <kernel/paging.h>
 #include <kernel/pma.h>
 */
+#include <kernel/idt_init.h>
 
 #include <kernel/framebuffer.h>
 #include <kernel/tty.h>
@@ -29,13 +29,15 @@ void kernel_main() {
     if(!fb_init())
         hcf();
 
-    //init_gdt(); // Set up GDT and reload segment buffers
-    //init_idt(); // Set up IDT
+    /* Set up GDT and reload segment buffers 
+     * Limine now does it for us so no manual GDT 
+     * setup is required */
+    //init_gdt(); 
     
+    init_idt(); // Set up IDT
     fb_clear(0x000000);  // Clear to black
-   
-    terminal_initialize(0xFFFFFF, 0x0000FF);
-    
+    terminal_initialize(0xFFFFFF, 0x000035);
+
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
     kprintf("                                   HELLO\n");
     kprintf("What happened in Monte Carlo happened...\n");

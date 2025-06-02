@@ -34,8 +34,10 @@ void pic_remap(uint8_t offset1, uint8_t offset2)
 	outb(PIC2_DATA, ICW4_8086);
 	io_wait();
 
-	// Unmask both PICs.
-	outb(PIC1_DATA, 0);
-	outb(PIC2_DATA, 0);
 }
 
+void disable_pic(){
+	// Mask both PICs.
+	outb(PIC1_DATA, 0xFF);
+	outb(PIC2_DATA, 0xFF);
+}

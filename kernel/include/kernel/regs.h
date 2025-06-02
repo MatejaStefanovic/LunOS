@@ -4,24 +4,21 @@
 #include <stdint.h>
 
 struct regs_t {
-    // Pushed by pusha (order reversed to match stack layout)
-    uint32_t edi, esi, ebp, esp;
-    uint32_t ebx, edx, ecx, eax;
-
-    // Manually pushed
-    uint32_t ds;
-    uint32_t cr2;
-    uint32_t int_no;
-    uint32_t err_code;
-
-    // Pushed by CPU on any interrupt
-    uint32_t eip;
-    uint32_t cs;
-    uint32_t eflags;
-
-    // Only pushed if privilege level change (ring 3 → 0)
-    uint32_t useresp;  // Only valid if from user mode
-    uint32_t ss;       // Only valid if from user mode
+    // Manually pushed registers
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
+    
+    // CR2 for page faults
+    uint64_t cr2;
+    uint64_t int_no;
+    uint64_t err_code;
+    
+    // CPU-pushed values
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t userrsp;
+    uint64_t ss;
 };
 
 #endif

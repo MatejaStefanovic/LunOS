@@ -12,20 +12,24 @@
  * is used to manage interrupt handlers*/
 typedef void (*isr_t)();  
 
-struct idt_entry_t{
-    uint16_t offset_lower;
-    uint16_t seg_selector;
-    uint8_t  zero; // always 0, reserved by intel
-    uint8_t  flags; // P DPL D TYPE
-    uint16_t offset_higher;
-}__attribute__((packed));
+struct idt_entry_t {
+	uint16_t    isr_low;    // The lower 16 bits of the ISR's address
+	uint16_t    kernel_cs;  // The GDT segment selector that the CPU will load into CS before calling the ISR
+	uint8_t	    ist;        // The IST in the TSS that the CPU will load into RSP; set to zero for now
+	uint8_t     attributes; // Type and attributes; see the IDT page
+	uint16_t    isr_mid;    // The higher 16 bits of the lower 32 bits of the ISR's address
+	uint32_t    isr_high;   // The higher 32 bits of the ISR's address
+	uint32_t    reserved;   // Set to zero
+} __attribute__((packed));
 
-struct idt_ptr{
-    uint16_t limit;
-    uint32_t base;
-}__attribute__((packed));
+struct idt_ptr {
+	uint16_t	limit;
+	uint64_t	base;
+} __attribute__((packed));
 
-extern void setIdt(uint16_t limit, uint32_t base);
+
+
+extern void setIdt(uint16_t limit, uint64_t base);
 void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector, uint8_t flags);
 void init_idt(void);
 

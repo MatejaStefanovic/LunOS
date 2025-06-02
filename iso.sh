@@ -12,6 +12,8 @@ cp sysroot/boot/LunOS.kernel isodir/LunOS.kernel
 cat > isodir/limine.conf << EOF
 # Limine Configuration
 timeout: 0
+#graphics: yes
+#wallpaper: boot():/lunberg.png
 resolution: 1920x1080x32
 
 # Kernel entry

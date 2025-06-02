@@ -1,12 +1,12 @@
 .section .text
-
 .extern isr_common_stub
+
 .macro ISR_NOERR n
 .global isr\n
 isr\n:
     cli                 # Disable interrupts
-    pushl $0            # Fake error code (0)
-    pushl $\n           # Interrupt number (n)
+    pushq $0            # Fake error code (0) 
+    pushq $\n           # Interrupt number (n) 
     jmp isr_common_stub # Jump to common handler
 .endm
 
@@ -14,10 +14,9 @@ isr\n:
 .global isr\n
 isr\n:
     cli                 # Disable interrupts
-    pushl $\n           # Interrupt number (n), error code is already on the stack
+    pushq $\n           # Interrupt number (n) 
     jmp isr_common_stub # Jump to common handler
 .endm
-
 
 # Define stubs for exceptions (0-31)
 ISR_NOERR 0
@@ -55,30 +54,50 @@ ISR_NOERR 31
 
 .global isr_common_stub
 isr_common_stub:
-    pusha 
-    movl %ds, %eax 
-    pushl %eax
-    movl %cr2, %eax
-    pushl %eax 
-
-    movw $0x10, %ax
-    movw %ax, %ds 
-    movw %ax, %es 
-    movw %ax, %fs 
-    movw %ax, %gs 
+    # Save all general purpose registers
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rsi
+    pushq %rdi
+    pushq %rbp
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
     
-    pushl %esp
-    call isr_dispatch       # Call the C function isr_dispatch(struct regs_t r*)
-    addl $4, %esp           # Clean up stack after the call to isr_dispatch
+    # Save CR2 for page fault handling
+    movq %cr2, %rax
+    pushq %rax
     
-    popl %ebx
-    movw %bx, %ds
-    movw %bx, %es
-    movw %bx, %fs
-    movw %bx, %gs
-
-    popa
-    addl $8, %esp    
-
-    sti                     # Re-enable interrupts
-    iret                    # Return from interrupt
+    # Call C handler - first parameter is in %rdi in x86_64 calling convention
+    movq %rsp, %rdi      # Pass stack pointer as first argument
+    call isr_dispatch
+    
+    # Restore CR2 (discard the value)
+    popq %rax
+    
+    # Restore general purpose registers
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+    
+    addq $16, %rsp       # Clean up error code and interrupt number (2 * 8 bytes)
+    iretq                # 64-bit interrupt return
