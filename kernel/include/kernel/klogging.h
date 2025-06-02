@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 #define KPRINTF_BUF_SIZE 1024
-#define MAX_INT_DIGITS 12
-#define MAX_HEX_DIGITS 11 // 8 + 2 for 0x and + 1 for \0
+#define MAX_INT_DIGITS 21
+#define MAX_HEX_DIGITS 17 
 // Function that formats the output string
 int kvsprintf(char *buf, const char* __restrict, va_list args);
 

@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <utils.h>
 
-int ui32_to_hex_str(uint32_t val, char *str){
+int ui64_to_hex_str(uint64_t val, char *str){
     const char *hex_digits = "0123456789ABCDEF";
     int index = 0;
     if(val == 0){
@@ -104,7 +104,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                 }
                 uint64_t ptr_val = (uint64_t)ptr;
                 char hex_str[MAX_HEX_DIGITS];
-                ui32_to_hex_str(ptr_val, hex_str);
+                ui64_to_hex_str(ptr_val, hex_str);
 
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
                     return -EOVERFLOW;
@@ -113,7 +113,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
             case 'x': {
                 uint32_t val = va_arg(args, uint32_t);
                 char hex_str[MAX_HEX_DIGITS];
-                ui32_to_hex_str(val, hex_str);
+                ui64_to_hex_str(val, hex_str);
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
                     return -EOVERFLOW;
                 break;
@@ -132,7 +132,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                     ++format;
                     uint32_t val = va_arg(args, uint32_t);
                     char hex_str[MAX_HEX_DIGITS];
-                    ui32_to_hex_str(val, hex_str);
+                    ui64_to_hex_str(val, hex_str);
                     if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
                         return -EOVERFLOW;
                     break;

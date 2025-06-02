@@ -104,3 +104,5 @@ const uint8_t* font_get_char(char c) {
     }
     return font8x8_basic[0]; // Return space for unknown characters
 }
+
+

@@ -33,8 +33,9 @@ void kernel_main() {
     //init_idt(); // Set up IDT
     
     fb_clear(0x000000);  // Clear to black
-    terminal_initialize();
-
+   
+    terminal_initialize(0xFFFFFF, 0x0000FF);
+    
     kprintf("I started this gangsta shit?! And this the motherfucking chance I get?\n");
     kprintf("                                   HELLO\n");
     kprintf("What happened in Monte Carlo happened...\n");
