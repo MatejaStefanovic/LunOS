@@ -68,7 +68,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
         switch(curr_ch){
             case 'd': {
                 int val = va_arg(args, int);
-                char num_buf[MAX_INT_DIGITS]; // Enough digits for 32 bit int
+                char num_buf[MAX_INT_DIGITS]; // Enough digits for 64 bit int
                 int int_str_len = itoa(val, num_buf);
 
                 for(int i = 0; i < int_str_len; ++i){
@@ -130,7 +130,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
                 }
                 if(*format == 'x'){
                     ++format;
-                    uint32_t val = va_arg(args, uint32_t);
+                    uint64_t val = va_arg(args, uint64_t);
                     char hex_str[MAX_HEX_DIGITS];
                     ui64_to_hex_str(val, hex_str);
                     if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, hex_str))
@@ -144,7 +144,7 @@ int kvsprintf(char *buf, const char* restrict format, va_list args){
             }
             case 'u': {
                 unsigned int val = va_arg(args, unsigned int);
-                char ul_str[32];
+                char ul_str[MAX_INT_DIGITS];
                 ul_to_str(val, ul_str);
                 if(!BUFFER_SAFE_WRITE_STR(buf, len, KPRINTF_BUF_SIZE, ul_str))
                     return -EOVERFLOW;

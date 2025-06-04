@@ -2,14 +2,13 @@
 #include <kernel/gdt_init.h>
 #include <kernel/isr_handler.h>
 #include <kernel/paging.h>
-#include <kernel/pma.h>
 */
-#include <kernel/idt_init.h>
 
+#include <kernel/idt_init.h>
 #include <kernel/framebuffer.h>
 #include <kernel/tty.h>
 #include <kernel/klogging.h>
-
+#include <kernel/vmm.h>
 // Set the base revision to 3
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
@@ -44,5 +43,8 @@ void kernel_main() {
     kprintf("What happened in Barcelona happened...\n");
     kprintf("What happened in Madrdid happened and we are here, ");
     kprintf("we're in Rome...\n");
-    //parse_multiboot_mem_info(addr);
+    
+    vmm_init();
+
+    //parse_mmap(); 
 }

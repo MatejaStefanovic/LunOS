@@ -34,7 +34,15 @@ static volatile struct limine_hhdm_request hhdm_request = {
     .revision = 0
 };
 
+// Kernel address request
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_kernel_address_request kernel_address_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0
+};
+
 // Getter functions
+ 
 struct limine_framebuffer_request* get_framebuffer_request(void) {
     return (struct limine_framebuffer_request*)&framebuffer_request;
 }
@@ -45,4 +53,8 @@ struct limine_memmap_request* get_memmap_request(void) {
 
 struct limine_hhdm_request* get_hhdm_request(void) {
     return (struct limine_hhdm_request*)&hhdm_request;
+}
+
+struct limine_kernel_address_request* get_kernel_address_request(void){
+    return (struct limine_kernel_address_request*)&kernel_address_request;
 }
