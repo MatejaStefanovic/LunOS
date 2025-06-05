@@ -1,6 +1,4 @@
 #include <kernel/vmm.h>
-#include <kernel/klogging.h>
-#include <kernel/limine_requests.h>
 
 static struct page_table_t* current_pml4 = NULL;
 static uint64_t hhdm_offset;
@@ -28,13 +26,8 @@ static void free_page_table(struct page_table_t *pt){
 }
 
 int vmm_init(){
-    struct limine_hhdm_request *hhdm_request = get_hhdm_request();
     
-    if(!hhdm_request || !hhdm_request->response){
-        kprintf("ERROR: Cannot get hhdm from limine");
-    }
-    
-    hhdm_offset = hhdm_request->response->offset;
+    hhdm_offset = get_hhdm_offset();
 
     // TODOOOOOOOOO
     current_pml4 = get_current_pml4();
@@ -73,7 +66,7 @@ pte_t* vmm_walk_page_table(vaddr_t vaddr, bool create) {
         if (!(*entry & PTE_PRESENT)) {
             if (!create) return NULL;
             
-            // Allocate new page table
+            // Allocate new page table from our pool
             struct page_table_t* new_pt = alloc_page_table();
             if (!new_pt) return NULL;
             

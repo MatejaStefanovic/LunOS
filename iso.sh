@@ -13,7 +13,7 @@ cat > isodir/limine.conf << EOF
 # Limine Configuration
 timeout: 0
 #graphics: yes
-#wallpaper: boot():/lunberg.png
+#wallpaper: boot():/lundberg.png
 resolution: 1920x1080x32
 
 # Kernel entry

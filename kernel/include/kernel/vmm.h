@@ -1,9 +1,7 @@
-#ifndef __KERNEL_VMM_H
-#define __KERNEL_VMM_H
+#ifndef __KERNEL_VIRTUAL_MEM_MANAGER_H
+#define __KERNEL_VIRTUAL_MEM_MANAGER_H
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include <kernel/memutils.h>
 
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
@@ -33,9 +31,6 @@
 // Get PTE entry from address
 #define PTE_ADDR(pte) ((pte) & 0x000FFFFFFFFFF000UL)
 
-typedef uint64_t pte_t; 
-typedef uint64_t vaddr_t;
-typedef uint64_t paddr_t;
 
 struct page_table_t {
     pte_t entries[512];
@@ -48,19 +43,6 @@ struct mem_region_t{
     bool in_use;
 };
 
-// Static pool for bootstrapping
-#define MAX_PAGE_TABLES 256
-#define MAX_REGIONS 64
-
-struct vmm_pool_t {
-    struct page_table_t tables[MAX_PAGE_TABLES];
-    bool table_used[MAX_PAGE_TABLES];
-    struct mem_region_t regions[MAX_REGIONS];
-    // Allocation hints, we start searching for next free
-    // table or region from where we left off last time 
-    int next_table;
-    int next_region;
-};
 
 int vmm_init(void);
 
@@ -97,15 +79,6 @@ static inline size_t vmm_pages_in_range(vaddr_t start, vaddr_t end){
     return (vmm_page_align_up(end) - vmm_page_align_down(start)) / PAGE_SIZE;
 }
 
-static inline void set_cr3(paddr_t pml4_phys) {
-    __asm__ volatile("mov %0, %%cr3" :: "r"(pml4_phys) : "memory");
-}
-
-static inline paddr_t get_cr3(void) {
-    paddr_t cr3;
-    __asm__ volatile("mov %%cr3, %0" : "=r"(cr3));
-    return cr3;
-}
 
 static inline void vmm_flush_tlb(void) {
     __asm__ volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax", "memory");

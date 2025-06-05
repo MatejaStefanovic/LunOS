@@ -1,5 +1,4 @@
 #include <kernel/klogging.h>
-#include <kernel/tty.h>
 #include <kernel/bufferutils.h>
 #include <stdio.h>
 #include <errno.h>
