@@ -68,7 +68,7 @@ libk.a: $(LIBK_OBJS)
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
 
-.c.S:
+.S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
 .c.libk.o:

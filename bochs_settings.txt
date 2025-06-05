@@ -1,4 +1,4 @@
-romimage: file="/usr/share/bochs/BIOS-bochs-latest", address=0x00000000, options=none, flash_data=none
+romimage: file="/usr/share/bochs/BIOS-bochs-latest", options=none, flash_data=none
 vgaromimage: file="/usr/share/bochs/VGABIOS-lgpl-latest.bin"
 ata0-slave: type=cdrom, path=LunOS.iso, status=inserted
 boot: cdrom

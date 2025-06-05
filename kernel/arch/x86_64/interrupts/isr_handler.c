@@ -1,7 +1,7 @@
 #include <kernel/isr_handler.h>
 #include <kernel/klogging.h>
 
-void decode_page_fault_error(uint32_t err_code) {
+void decode_page_fault_error(uint64_t err_code) {
     kprintf("Error code: 0x%lx\n", err_code);
 
     if (err_code & 0x1)
@@ -28,7 +28,7 @@ void decode_page_fault_error(uint32_t err_code) {
 
 void isr0_divide_by_zero(struct regs_t *r){
     kprintf("EXCEPTION: Divide by zero\n");
-    kprintf("Division happened at address: 0x%lx", r->eip);
+    kprintf("Division happened at address: 0x%lx", r->rip);
     kprintf("\n");
 
     for(;;);
@@ -37,6 +37,8 @@ void isr0_divide_by_zero(struct regs_t *r){
 void isr14_page_fault(struct regs_t *r){
     kprintf("ERROR: page fault occurred at address: %lx\n", r->cr2);
     decode_page_fault_error(r->err_code);
+
+    for(;;);
 }
 
 void isr_reserved(){

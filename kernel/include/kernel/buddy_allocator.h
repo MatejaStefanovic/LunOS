@@ -3,34 +3,45 @@
 
 #define MAX_SUPPORTED_ORDER 20
 #define MAX_BUDDY_ARENAS 32
-#include <stdint.h> 
-#include <stddef.h>
+#define PAGE_FRAME_SIZE 4096
+
+#include <kernel/memutils.h>
+
 struct free_block {
     uint8_t current_order;
-    uint32_t phys_addr;           // Physical address of the free block
+    uint64_t phys_addr;         // Physical address of the free block
     struct free_block *next;
 };
 
 struct buddy_arena{
-    uint32_t base;              // Free memory starts at this address
-    uint32_t length;            // Size in bytes
+    uint64_t base;              // Free memory starts at this address
+    uint64_t length;            // Size in bytes
     uint8_t max_arena_order;    // Max power of 2 for block size 
     /* Array of pointers to free blocks differing in size by order of 2
-     * freelist[19] is the biggest possible block which is 2GB and the 
-     * lowest possible is freelist[0] which corresponds to a block size of 4096 bytes (1 page)
-     * each free_block points to the next from highest to lowers 19->0 */
+     * freelist[20] is the biggest possible block which is 4GB and the 
+     * lowest possible is freelist[0] which corresponds to a block size of 
+     * 4096 bytes  (1 page)
+     * each free_block points to the next from highest to lowest 20->0 */
     struct free_block *free_list[MAX_SUPPORTED_ORDER + 1];
-
-    /* Array of metadata blocks in mapped virtual memory 
-     * without this we'd need to map phyiscal memory where the free
-     * memory we got from grubs multiboot mmap started and repeat that
-     * for each different memory region which is annoying and would require
-     * us to map a mb or two at each base addr which is a bad idea */
-    struct free_block *metadata_blocks;  
-    uint32_t metadata_count;  
-    uint32_t metadata_capacity;  
 };
 
 extern struct buddy_arena buddy_arenas[MAX_BUDDY_ARENAS];
 
+void buddy_allocator_init(void);
+int add_buddy_arena(uint8_t ba_cnt,uint64_t base, uint64_t len);
+void populate_buddy_blocks(uint8_t buddy_arena_counter);
+
+// Debug functions
+void print_buddy_arena(uint8_t buddy_arena_counter);
+void print_arena_summary(uint8_t buddy_arena_counter);
+
+
+static inline void* phys_to_virt(uint64_t phys_addr) {
+    return (void*)(phys_addr + get_hhdm_offset());
+}
+
+static inline uint64_t virt_to_phys(void* virt_addr) {
+    return (uint64_t)virt_addr - get_hhdm_offset();
+}
 #endif
+
