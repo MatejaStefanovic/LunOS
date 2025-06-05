@@ -22,5 +22,6 @@
 
 void outb(uint16_t port, uint8_t val);
 void pic_remap(uint8_t offset1, uint8_t offset2); 
+void disable_pic(void);
 
 #endif

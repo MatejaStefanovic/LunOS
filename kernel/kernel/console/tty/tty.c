@@ -1,91 +1,134 @@
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <kernel/tty.h>
+#include <kernel/limine.h>
+#include <kernel/framebuffer.h>
 
-#include "vga.h"
+static uint16_t total_rows;
+static uint16_t total_columns;
+static uint16_t current_row;
+static uint16_t current_column;
+static uint32_t terminal_fg_color;
+static uint32_t terminal_bg_color;
+static char terminal_buffer[240*135];
 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xC03FF000;
-
-static size_t terminal_row;
-static size_t terminal_column;
-static uint8_t terminal_color;
-static uint16_t* terminal_buffer;
-
-void terminal_initialize(void) {
-	terminal_row = 0;
-	terminal_column = 0;
-	terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-	terminal_buffer = VGA_MEMORY;
-	for (size_t y = 0; y < VGA_HEIGHT; y++) {
-		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = vga_entry(' ', terminal_color);
-		}
-	}
+void get_screen_dimensions(){
+    struct limine_framebuffer *fb = fb_get();
+    if(!fb)
+        for(;;);
+    total_columns = fb->width / FONT_WIDTH;
+    total_rows = fb->height / FONT_HEIGHT;
 }
 
-void terminal_setcolor(uint8_t color) {
-	terminal_color = color;
-}
+void terminal_initialize(uint32_t fg, uint32_t bg) {
+    get_screen_dimensions();
+    current_row = 0;
+    current_column = 0;
 
-void terminal_scroll(void){
-    // Scroll the terminal up by one row
-    memmove(
-        terminal_buffer,
-        terminal_buffer + VGA_WIDTH,
-        (VGA_HEIGHT - 1) * VGA_WIDTH * sizeof(uint16_t)
-    );
-
-    // Clear the last row
-    for (size_t i = 0; i < VGA_WIDTH; ++i) {
-        terminal_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + i] = vga_entry(' ', VGA_COLOR_BLACK);
+    terminal_fg_color = fg; // White
+    terminal_bg_color = bg; // Black
+    
+    size_t buffer_size = total_rows * total_columns;
+    
+    for (size_t i = 0; i < buffer_size; i++) {
+        terminal_buffer[i] = ' ';
     }
-
-    //Reset the cursor
-    terminal_row = VGA_HEIGHT - 1;
+    terminal_render();
 }
-void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y) {
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = vga_entry(c, color);
+
+void terminal_render(void) {
+    for (size_t y = 0; y < total_rows; y++) {
+        for (size_t x = 0; x < total_columns; x++) {
+            const size_t index = y * total_columns + x;
+            char ch = terminal_buffer[index];
+            
+            fb_put_char(ch, x * FONT_WIDTH, y * FONT_HEIGHT, terminal_fg_color, terminal_bg_color);
+        }
+    }
+}
+
+void terminal_putentryat(char c, size_t x, size_t y) {
+    if (x >= total_columns || y >= total_rows) {
+        return; 
+    }
+    const size_t index = y * total_columns + x;
+    terminal_buffer[index] = c;
+    fb_put_char(c, x * FONT_WIDTH, y * FONT_HEIGHT, terminal_fg_color, terminal_bg_color);
 }
 
 void terminal_putchar(char c) {
-	unsigned char uc = c;
-
-    if(uc == '\n'){
-        terminal_column = 0;
-        if(++terminal_row == VGA_HEIGHT)
-            terminal_scroll();
+    if (c == '\n') {
+        terminal_newline();
         return;
     }
-    if(uc == '\t'){
-        size_t space_left_to_tab_stop = TAB_WIDTH - (terminal_column % TAB_WIDTH);
-        for(size_t i = 0; i < space_left_to_tab_stop; ++i)
-            ++terminal_column;
+     if (c == '\t') {
+        current_column += TAB_WIDTH - (current_column % TAB_WIDTH);
+
+        if (current_column >= total_columns) {
+            terminal_newline();
+        }
         return;
+    }   
+    terminal_putentryat(c, current_column, current_row);
+    
+    if (++current_column >= total_columns) {
+        terminal_newline();
     }
+}
 
-	terminal_putentryat(uc, terminal_color, terminal_column, terminal_row);
-	if (++terminal_column != VGA_WIDTH) 
-        return;
+void terminal_newline(void) {
+    current_column = 0;
+    if (++current_row >= total_rows) {
+        terminal_scroll();
+        // Redner prints the whole buffer to the screen, we only want to start
+        // doing that once we need to Scroll otherwise we'd needlessly 
+        // go over the entire buffer every time we write a character
+        terminal_render(); 
+    }
+}
 
-	terminal_column = 0;
-	
-    if (++terminal_row == VGA_HEIGHT)
-		terminal_scroll();
-	
+// Scroll the terminal up by one line
+void terminal_scroll(void) {
+    // Move all lines up by one row
+    memmove(
+        terminal_buffer,
+        terminal_buffer + total_columns,
+        (total_rows - 1) * total_columns * sizeof(char)
+    );
+    
+    // Clear the last row
+    for (size_t i = 0; i < total_columns; i++) {
+        terminal_buffer[(total_rows - 1) * total_columns + i] = ' ';
+    }
+    
+    current_row = total_rows - 1;
 }
 
 void terminal_write(const char* data, size_t size) {
-	for (size_t i = 0; i < size; i++)
-		terminal_putchar(data[i]);
+    for (size_t i = 0; i < size; i++) {
+        terminal_putchar(data[i]);
+    }
 }
 
 void terminal_writestring(const char* data) {
-	terminal_write(data, strlen(data));
+    terminal_write(data, strlen(data));
+}
+
+void terminal_clear(void) {
+    size_t buffer_size = total_rows * total_columns;
+    
+    for (size_t i = 0; i < buffer_size; i++) {
+        terminal_buffer[i] = ' ';
+    }
+    
+    current_row = 0;
+    current_column = 0;
+    terminal_render();
+}
+
+void terminal_setcolor(uint32_t fg_color, uint32_t bg_color) {
+    terminal_fg_color = fg_color;
+    terminal_bg_color = bg_color;
 }
