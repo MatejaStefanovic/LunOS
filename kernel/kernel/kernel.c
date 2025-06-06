@@ -1,9 +1,3 @@
-/*
-#include <kernel/gdt_init.h>
-#include <kernel/isr_handler.h>
-#include <kernel/paging.h>
-*/
-
 #include <kernel/idt_init.h>
 #include <kernel/framebuffer.h>
 #include <kernel/tty.h>
@@ -14,13 +8,6 @@
 // Set the base revision to 3
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
-
-// Halt and catch fire function.
-static void hcf(void) {
-    for (;;) {
-    asm ("hlt");
-    }
-}
 
 void kernel_main() {
 
@@ -34,7 +21,8 @@ void kernel_main() {
      * Limine now does it for us so no manual GDT 
      * setup is required */
     //init_gdt(); 
-    
+
+
     fb_clear(0x000000);  // Clear to black
     terminal_initialize(0xFFFFFF, 0x000035);
     KSUCCESS("Terminal initialized properly\n");
