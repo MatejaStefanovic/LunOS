@@ -207,21 +207,16 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
     }
     // Time to coalsce
 
+    kprintf("\nphys_addr: %lx\n", phys_addr);
     while(order < arena->max_arena_order){
-        uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
-        uint64_t buddy_addr;
 
-        uint64_t buddy_offset = phys_addr - block_size;
-        uint64_t buddy_index = buddy_offset / block_size;
-       
-        // Buddy blocks are either even or odd
-        // each buddy pair is 01, 23, 45 and so on 
-        // with this we find what is our buddy's address
-        // if it exists which we check in the while loop
-        if(buddy_index & 1)
-            buddy_addr = phys_addr - block_size;
-        else
-            buddy_addr = phys_addr + block_size;
+        uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
+        // Buddies can be found by just xoring one of the buddy's 
+        // physical address and the block size of that buddy's order
+        // Thank you Donald Knuth 
+        uint64_t buddy_addr = phys_addr ^ block_size; 
+        
+        kprintf("buddy_addr %lx\n", buddy_addr);
         
         struct free_block **current = &arena->free_list[order];
         bool found_buddy = false;
@@ -238,7 +233,7 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
             }
             current = &(*current)->next; 
         }
-
+        
         if(!found_buddy)
             break;
         // We wanna use the lower address always for our new 
