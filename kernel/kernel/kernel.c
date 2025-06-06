@@ -1,26 +1,13 @@
-/*
-#include <kernel/gdt_init.h>
-#include <kernel/isr_handler.h>
-#include <kernel/paging.h>
-*/
-
 #include <kernel/idt_init.h>
 #include <kernel/framebuffer.h>
 #include <kernel/tty.h>
 #include <kernel/klogging.h>
 #include <kernel/vmm.h>
-#include <kernel/buddy_allocator.h>
+#include <kernel/pmm.h>
 
 // Set the base revision to 3
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
-
-// Halt and catch fire function.
-static void hcf(void) {
-    for (;;) {
-    asm ("hlt");
-    }
-}
 
 void kernel_main() {
 
@@ -34,7 +21,8 @@ void kernel_main() {
      * Limine now does it for us so no manual GDT 
      * setup is required */
     //init_gdt(); 
-    
+
+
     fb_clear(0x000000);  // Clear to black
     terminal_initialize(0xFFFFFF, 0x000035);
     KSUCCESS("Terminal initialized properly\n");
@@ -46,6 +34,17 @@ void kernel_main() {
     kprintf("Setting up buddy allocator ...\n");
     buddy_allocator_init();
     KSUCCESS("Buddy allocator initialized properly\n");
+    
+    print_buddy_arena(0);
+   
+    void *ptr = kmalloc(4096*sizeof(struct idt_entry_t));
+    kprintf("\n");
+    print_buddy_arena(0);
+    kprintf("\n");
+    kfree(ptr);
+    print_buddy_arena(0);
+    hcf();
+
 }
 
 /* 

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <kernel/klogging.h>
 #include <kernel/limine_requests.h>
+#include <kernel/halt.h>
 
 typedef uint64_t pte_t; 
 typedef uint64_t vaddr_t;
@@ -26,7 +27,7 @@ static inline uint64_t get_hhdm_offset(void){
     
     if(!hhdm_request || !hhdm_request->response){
         kprintf("ERROR: Cannot get hhdm from limine\nHalting");
-        for(;;);
+        hcf();
     }
     
     return hhdm_request->response->offset;

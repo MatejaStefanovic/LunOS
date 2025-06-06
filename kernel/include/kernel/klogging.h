@@ -41,7 +41,7 @@ void kprintf(const char* __restrict, ...);
         kprintf(fmt, ##__VA_ARGS__); \
     } while (0)
 
-#define KERR(fmt, ...) \
+#define KERROR(fmt, ...) \
     do { \
         kprintf("["); \
         terminal_setcolor(0xFF0000, 0x000035); \

@@ -1,5 +1,6 @@
 #include <kernel/isr_handler.h>
 #include <kernel/klogging.h>
+#include <kernel/halt.h>
 
 void decode_page_fault_error(uint64_t err_code) {
     kprintf("Error code: 0x%lx\n", err_code);
@@ -31,14 +32,14 @@ void isr0_divide_by_zero(struct regs_t *r){
     kprintf("Division happened at address: 0x%lx", r->rip);
     kprintf("\n");
 
-    for(;;);
+    hcf();
 }
 
 void isr14_page_fault(struct regs_t *r){
     kprintf("ERROR: page fault occurred at address: %lx\n", r->cr2);
     decode_page_fault_error(r->err_code);
 
-    for(;;);
+    hcf();
 }
 
 void isr_reserved(){
@@ -88,7 +89,7 @@ void isr_dispatch(struct regs_t *r){
         case 29: 
         case 30:
             kprintf("isr%lu", r->int_no);
-            for(;;);
+            hcf();
             break;
 
         // IRQ handlers
