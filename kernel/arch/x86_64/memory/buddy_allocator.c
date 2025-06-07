@@ -7,12 +7,12 @@ void buddy_allocator_init(){
     struct limine_memmap_request *mmap_req = get_memmap_request();
    
     if(!mmap_req){
-        kprintf("CRITICAL ERROR: Couldn't not get memory map\nHalting");
+        KERROR("CRITICAL ERROR: Couldn't not get memory map\nHalting");
         hcf();
     }
     struct limine_memmap_response *mmap_response = mmap_req->response;
     if(!mmap_response){
-        kprintf("CRITICAL ERROR: Couldn't get response from mmap request\nHalting");
+        KERROR("CRITICAL ERROR: Couldn't get response from mmap request\nHalting");
         hcf();
     }
     
@@ -27,7 +27,7 @@ void buddy_allocator_init(){
             break;
         }
    
-        if(add_buddy_arena(buddy_arena_counter,entry->base, entry->length))
+        if(add_buddy_arena(buddy_arena_counter,entry->base, entry->length) == 0)
         {   
             uint64_t aligned_base = (entry->base + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);
             uint64_t end = entry->base + entry->length;
@@ -43,21 +43,23 @@ void buddy_allocator_init(){
 }
 
 int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
-    if (arena_idx >= MAX_BUDDY_ARENAS)
-        return 0;    
-    
+    if (arena_idx >= MAX_BUDDY_ARENAS){
+        KERROR("Not enough arenas, yell at the dev to increase it\n");
+        return -1;    
+    }
     // Not aligning to page size is a B A D idea : ) 
     uint64_t aligned_base = (base + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);
     uint64_t end = base + len;
     
     // This means arena is too small
     if (aligned_base >= end) 
-        return 0;
+        return -1;
     
     uint64_t aligned_len = end - aligned_base;
     
+    // This also means arena is too small
     if (aligned_len < PAGE_FRAME_SIZE)
-        return 0;
+        return -1;
     
     buddy_arenas[arena_idx].base = aligned_base;
     buddy_arenas[arena_idx].length = aligned_len;
@@ -78,7 +80,7 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
     }
     
     populate_buddy_blocks(arena_idx);
-    return 1;
+    return 0;
 }
 
 void populate_buddy_blocks(uint8_t arena_idx){
@@ -130,8 +132,6 @@ void populate_buddy_blocks(uint8_t arena_idx){
     }
 }
 
-
-
 uint64_t buddy_alloc_pages(uint8_t order){
     if (order > MAX_SUPPORTED_ORDER)
         return 0;
@@ -181,13 +181,15 @@ uint64_t buddy_alloc_pages(uint8_t order){
             return addr;
         } 
     }
-    KERROR("Couldn't allocate\nAborting...\n");
     return 0;
 }
 
 void buddy_free_pages(uint64_t phys_addr, uint8_t order){
-    if(order > MAX_SUPPORTED_ORDER)
+    // This should never happen ** I HOPE **
+    if(order > MAX_SUPPORTED_ORDER){
+        KERROR("Tried to free more memory than there is in the system!?\n");
         return;
+    }
 
     // Find arena based on phys_addr
     struct buddy_arena *arena = NULL;
@@ -255,11 +257,11 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
     arena->free_list[order] = block;
 }
 
-uint64_t buddy_alloc_single_page(void) {
+uint64_t buddy_alloc_page(void) {
     return buddy_alloc_pages(0);
 }
 
-void buddy_free_single_page(uint64_t phys_addr) {
+void buddy_free_page(uint64_t phys_addr) {
     buddy_free_pages(phys_addr, 0);
 }
 
