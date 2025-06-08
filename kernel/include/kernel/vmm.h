@@ -38,9 +38,9 @@ struct page_table_t {
 
 struct mem_region_t{
     vaddr_t start;
-    size_t size;
-    paddr_t phys_start;
-    bool in_use;
+    vaddr_t end;
+    uint64_t flags;
+    struct mem_region_t* next;
 };
 
 struct addr_space_t{
@@ -105,4 +105,17 @@ static inline void vmm_flush_tlb_single(vaddr_t vaddr) {
     __asm__ volatile("invlpg (%0)" :: "r"(vaddr) : "memory");
 }
 
+void test_vmm(void);
+/*
+    Might be useful in the future Idk
+    struct limine_kernel_address_request *ka_req = get_kernel_address_request();
+    vaddr_t kernel_virt = ka_req->response->virtual_base;
+    paddr_t kernel_phys = ka_req->response->physical_base;
+    
+    extern char _kernel_start[];
+    extern char _kernel_end[];
+
+    uint64_t kernel_size = (uint64_t)_kernel_end - (uint64_t)_kernel_start;
+ 
+*/
 #endif

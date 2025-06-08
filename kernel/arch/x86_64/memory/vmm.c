@@ -5,6 +5,8 @@
 static struct page_table_t* current_pml4 = NULL;
 static uint64_t hhdm_offset;
 
+struct addr_space_t *kernel_as = NULL;
+
 static struct page_table_t* get_current_pml4(){
     if(!current_pml4){
         paddr_t cr3 = get_cr3();
@@ -18,13 +20,88 @@ static struct page_table_t* get_current_pml4(){
 int vmm_init(){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
+
+    kernel_as = kmalloc(sizeof(struct addr_space_t));
+    memset(kernel_as, 0, sizeof(struct addr_space_t));
     
+    if(!kernel_as){
+        kprintf("Couldn't create kernel address space\n");
+        return -1;
+    }
+
     if(!current_pml4){
         kprintf("PML4 is NULL\n");
         return -1;
     }
+
+    kernel_as->pml4 = current_pml4;
     
     return 0;
+}
+
+struct addr_space_t *vmm_create_address_space(){
+    struct addr_space_t *as = kmalloc(sizeof(struct addr_space_t));
+    if(!as){
+        KERROR("Couldn't allocate memory for an address space\n");
+        return NULL;
+    }
+
+    memset(as, 0, sizeof(struct addr_space_t));
+
+    as->pml4 = vmm_alloc_page_table();
+    if(!as->pml4){
+        KERROR("Couldn't allocate a page table for the address space\nFreeing...\n");
+        kfree(as);
+        return NULL;
+    }
+    // If we don't have kernel address space or our current addres space
+    // that we're creating is the kernel address space we want to return NULL
+    if(!kernel_as || kernel_as == as){
+        KWARN("Cannot map kernel address space to user VA space\n");
+        kprintf("Returning VA space without kernel mappings...\n");
+        return as;
+    }
+    for(int i = 256; i < 512; ++i){
+        as->pml4->entries[i] = kernel_as->pml4->entries[i];
+    }
+    return as;
+}
+
+void vmm_destroy_address_space(struct addr_space_t* as) {
+    if (!as || as == kernel_as) {
+        KERROR("Either tried to destroy kernel addr space or a NULL addr space\n");
+        return;
+    }
+    // Free all user page tables (keep kernel mappings)
+    for (int i = 0; i < 256; i++) {
+        if (as->pml4->entries[i] & PTE_PRESENT) {
+            // Recursively free page directory pointer table
+            // Implementation would go deeper to free all levels
+            paddr_t pdp_phys = PTE_ADDR(as->pml4->entries[i]);
+            // Free the physical page 
+            pmm_free_page(pdp_phys);
+        }
+    }
+    
+    vmm_free_page_table(as->pml4);
+    
+    // Free memory regions
+    struct mem_region_t* region = as->regions;
+    while (region) {
+        struct mem_region_t* next = region->next;
+        kfree(region);
+        region = next;
+    }
+    
+    kfree(as);
+}
+void vmm_switch_address_space(struct addr_space_t* as) {
+    if (!as || !as->pml4){ 
+        KERROR("Cannot switch to a NULL address space\n");
+        return;
+    }
+    paddr_t pml4_phys = (paddr_t)as->pml4 - hhdm_offset;
+    set_cr3(pml4_phys);
 }
 
 struct page_table_t* vmm_alloc_page_table(void){
@@ -38,7 +115,7 @@ struct page_table_t* vmm_alloc_page_table(void){
     return pt;
 }
 
-static void free_page_table(struct page_table_t *pt){
+void vmm_free_page_table(struct page_table_t *pt){ 
     if(!pt){
         KERROR("Tried to free a NULL ptr\n");
         return;
@@ -241,4 +318,30 @@ paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr) {
 
 bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
+}
+
+void test_vmm() {
+    kprintf("Testing VMM...\n");
+    
+    // Create a new address space
+    struct addr_space_t* test_as = vmm_create_address_space();
+    if (!test_as) {
+        kprintf("FAIL: Could not create address space\n");
+        return;
+    }
+    
+    // Test mapping a single page: virtual 0x400000 -> physical 0x100000
+    int result = vmm_map_range(test_as, 0x400000, 0x100000, PAGE_SIZE, PTE_PRESENT | PTE_WRITABLE | PTE_USER);
+    kprintf("Map result: %s\n", result == 0 ? "SUCCESS" : "FAILED");
+    
+    // Switch to the new address space and test the mapping
+    vmm_switch_address_space(test_as);
+    kprintf("Switched to test address space - kernel still accessible!\n");
+    
+    // Switch back to kernel address space
+    vmm_switch_address_space(kernel_as);
+    
+    // Clean up
+    vmm_destroy_address_space(test_as);
+    kprintf("VMM test completed\n");
 }

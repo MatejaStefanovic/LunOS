@@ -727,7 +727,7 @@ int test_memory_access_safe() {
         kprintf("Expected: 0x%lx, Got: 0x%lx\n", test_pattern, pte_read);
         return -1;
     }
-    
+    kprintf("=== Safe memory access tests passed! ===\n");
     return 0;
 }
 

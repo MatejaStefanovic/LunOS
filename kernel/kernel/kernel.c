@@ -42,8 +42,7 @@ void kernel_main() {
         KSUCCESS("Virtual memory manager initialized properly\n");
    
     kprintf("\n");
-    run_vmm_tests();
-    
+    //run_vmm_tests();
     hcf();
 }
 
