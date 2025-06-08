@@ -85,14 +85,6 @@ void vmm_destroy_address_space(struct addr_space_t* as) {
     
     vmm_free_page_table(as->pml4);
     
-    // Free memory regions
-    struct mem_region_t* region = as->regions;
-    while (region) {
-        struct mem_region_t* next = region->next;
-        kfree(region);
-        region = next;
-    }
-    
     kfree(as);
 }
 void vmm_switch_address_space(struct addr_space_t* as) {

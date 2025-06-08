@@ -45,7 +45,6 @@ struct mem_region_t{
 
 struct addr_space_t{
     struct page_table_t *pml4;
-    struct mem_region_t *regions;
     uint64_t total_pages;
     uint64_t flags;
 };
