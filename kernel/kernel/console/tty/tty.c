@@ -64,14 +64,15 @@ void terminal_putchar(char c) {
         terminal_newline();
         return;
     }
-     if (c == '\t') {
+    if (c == '\t') {
         current_column += TAB_WIDTH - (current_column % TAB_WIDTH);
 
         if (current_column >= total_columns) {
             terminal_newline();
         }
         return;
-    }   
+    }
+
     terminal_putentryat(c, current_column, current_row);
     
     if (++current_column >= total_columns) {

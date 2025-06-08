@@ -5,8 +5,10 @@ void *kmalloc(size_t size){
         KWARN("Ayo why'd you request nothing?\n");
         return NULL;
     }
-    
-    size_t total_size = sizeof(struct heap_header) + size;
+                                                        // For our end magic
+                                                        // it gives us overflow 
+                                                        // detection
+    size_t total_size = sizeof(struct heap_header) + size + sizeof(uint32_t);
 
     uint8_t order = 0;
     size_t block_size = PAGE_FRAME_SIZE;
@@ -33,11 +35,19 @@ void *kmalloc(size_t size){
     heap_h->magic = HEAP_MAGIC;
     heap_h->size = size;
     heap_h->order = order;
-    
+   
     // C doesn't allow void pointer arithmetic so we gotta cast to char *
-    // essentially this just returns a void * to virtual address moved
-    // to after our header 
-    return (void*)((char*)virt_addr + sizeof(struct heap_header));
+    // essentially this is just a pointer that points to after our header
+    // or rather it points to where usable memory starts
+    char *start_of_data = (char*)virt_addr + sizeof(struct heap_header);
+
+    // End magic is used to check for overflows, if something runs over
+    // our allocated memory and keeps rampaging beyond our allocated block 
+    // we can check it with this when freeing
+    uint32_t *end_magic = (uint32_t*)(start_of_data + heap_h->size);
+    *end_magic = HEAP_MAGIC;
+
+    return (void*)start_of_data;
 }
 
 void kfree(void *ptr){
@@ -52,12 +62,29 @@ void kfree(void *ptr){
     struct heap_header* header = (struct heap_header*)((char*)ptr - sizeof(struct heap_header));
 
     // The magic number is used after we retrieve the heap to check whether 
-    // something messed with our values, if it is intact we're good
+    // something messed with our values, if it is intact we're good, same as above
     if(header->magic != HEAP_MAGIC){
         KERROR("Uh oh something ran over our heap - this ain't good\n");
+        
+        // Remember we placed it ourselves right after kmalloc requested size
+        // [header][requested size to alloc][end magic] is what it looks like in 
+        // memory and this ptr starts here -^
+        uint32_t *end_magic = (uint32_t*)((char*)ptr + header->size);
+        if(*end_magic != HEAP_MAGIC){
+            KERROR("Uh oh not only has something ran over our heap it went past it\n");
+            return;
+        }
         return;
     }
 
     uint64_t phys_addr = virt_to_phys(header);
     buddy_free_pages(phys_addr, header->order);
+}
+
+uint64_t pmm_alloc_page(){
+    return buddy_alloc_page();
+}
+
+void pmm_free_page(uint64_t phys){
+    return buddy_free_page(phys);
 }

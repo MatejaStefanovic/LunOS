@@ -29,6 +29,7 @@ $(KERNEL_ARCH_OBJS) \
 kernel/kernel.o \
 kernel/console/tty/tty.o \
 kernel/console/logging/klogging.o \
+kernel/tests/vmm_tests.o \
 
 OBJS=\
 $(KERNEL_OBJS) \

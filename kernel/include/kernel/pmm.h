@@ -12,5 +12,7 @@ struct heap_header {
 
 void *kmalloc(size_t size);
 void kfree(void* ptr);
+uint64_t pmm_alloc_page(void);
+void pmm_free_page(uint64_t phys);
 
 #endif

@@ -39,7 +39,6 @@ void isr14_page_fault(struct regs_t *r){
     kprintf("ERROR: page fault occurred at address: %lx\n", r->cr2);
     decode_page_fault_error(r->err_code);
 
-    hcf();
 }
 
 void isr_reserved(){
