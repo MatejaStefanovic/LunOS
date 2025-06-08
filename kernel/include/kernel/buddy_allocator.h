@@ -30,11 +30,14 @@ extern struct buddy_arena buddy_arenas[MAX_BUDDY_ARENAS];
 void buddy_allocator_init(void);
 int add_buddy_arena(uint8_t ba_cnt,uint64_t base, uint64_t len);
 void populate_buddy_blocks(uint8_t buddy_arena_counter);
+uint64_t buddy_alloc_pages(uint8_t order); 
+uint64_t buddy_alloc_page(void);
+void buddy_free_pages(uint64_t phys_addr, uint8_t order);
+void buddy_free_page(uint64_t phys_addr);
 
 // Debug functions
 void print_buddy_arena(uint8_t buddy_arena_counter);
-void print_arena_summary(uint8_t buddy_arena_counter);
-
+void verify_buddy_invariants(uint8_t arena_idx);
 
 static inline void* phys_to_virt(uint64_t phys_addr) {
     return (void*)(phys_addr + get_hhdm_offset());

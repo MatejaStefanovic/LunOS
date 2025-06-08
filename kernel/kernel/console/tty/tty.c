@@ -5,6 +5,7 @@
 #include <kernel/tty.h>
 #include <kernel/limine.h>
 #include <kernel/framebuffer.h>
+#include <kernel/halt.h>
 
 static uint16_t total_rows;
 static uint16_t total_columns;
@@ -17,7 +18,7 @@ static char terminal_buffer[240*135];
 void get_screen_dimensions(){
     struct limine_framebuffer *fb = fb_get();
     if(!fb)
-        for(;;);
+        hcf();
     total_columns = fb->width / FONT_WIDTH;
     total_rows = fb->height / FONT_HEIGHT;
 }
@@ -63,14 +64,15 @@ void terminal_putchar(char c) {
         terminal_newline();
         return;
     }
-     if (c == '\t') {
+    if (c == '\t') {
         current_column += TAB_WIDTH - (current_column % TAB_WIDTH);
 
         if (current_column >= total_columns) {
             terminal_newline();
         }
         return;
-    }   
+    }
+
     terminal_putentryat(c, current_column, current_row);
     
     if (++current_column >= total_columns) {

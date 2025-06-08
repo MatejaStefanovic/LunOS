@@ -38,32 +38,48 @@ struct page_table_t {
 
 struct mem_region_t{
     vaddr_t start;
-    size_t size;
-    paddr_t phys_start;
-    bool in_use;
+    vaddr_t end;
+    uint64_t flags;
+    struct mem_region_t* next;
 };
 
+struct addr_space_t{
+    struct page_table_t *pml4;
+    uint64_t total_pages;
+    uint64_t flags;
+};
 
 int vmm_init(void);
+struct addr_space_t *vmm_create_address_space(void);
+void vmm_remove_address_space(struct addr_space_t *as);
 
-int vmm_map_page(vaddr_t vaddr, paddr_t paddr, uint64_t flags);
-int vmm_unmap_page(vaddr_t vaddr);
-int vmm_map_range(vaddr_t vaddr, paddr_t paddr, uint64_t size, uint64_t flags);
-int vmm_unmap_range(vaddr_t vaddr, paddr_t paddr, uint64_t size, uint64_t flags);
+struct page_table_t *vmm_alloc_page_table(void);
+void vmm_free_page_table(struct page_table_t *pt);
+pte_t *vmm_walk_page_table(struct addr_space_t *as, vaddr_t vaddr, bool create);
+
+
+int vmm_map_page(struct addr_space_t *as,vaddr_t vaddr, paddr_t paddr, uint64_t flags);
+int vmm_unmap_page(struct addr_space_t *as, vaddr_t vaddr);
+int vmm_map_range(struct addr_space_t *as, vaddr_t vaddr, 
+        paddr_t paddr, uint64_t size, uint64_t flags);
+int vmm_unmap_range(struct addr_space_t *as, vaddr_t vaddr, uint64_t size);
+
 
 // Address translation
-paddr_t vmm_virt_to_phys(vaddr_t vaddr);
-bool vmm_is_mapped(vaddr_t vaddr);
-
-pte_t *vmm_walk_page_table(vaddr_t vaddr, bool create);
+paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr);
+bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr);
+void vmm_switch_address_space(struct addr_space_t* as);
 
 // Track memory regions
-void vmm_add_region(vaddr_t vaddr, paddr_t paddr, uint64_t size);
-void vmm_remove_region(vaddr_t vaddr);
-struct mem_region_t *find_region(vaddr_t vaddr);
+void vmm_add_region(struct addr_space_t *as, vaddr_t vaddr, paddr_t paddr, uint64_t size);
+void vmm_remove_region(struct addr_space_t *as, vaddr_t vaddr);
+struct mem_region_t *find_region(struct addr_space_t *as, vaddr_t vaddr);
+
+
+int vmm_handle_page_fault(struct addr_space_t* as, vaddr_t fault_addr, 
+                            uint64_t error_code);
 
 // Debug functions
-
 void vmm_dump_page_table_entry(vaddr_t vaddr);
 void vmm_dump_regions(void);
 
@@ -79,7 +95,7 @@ static inline size_t vmm_pages_in_range(vaddr_t start, vaddr_t end){
     return (vmm_page_align_up(end) - vmm_page_align_down(start)) / PAGE_SIZE;
 }
 
-
+// Translation lookaside buffer stuff
 static inline void vmm_flush_tlb(void) {
     __asm__ volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax", "memory");
 }
@@ -88,10 +104,17 @@ static inline void vmm_flush_tlb_single(vaddr_t vaddr) {
     __asm__ volatile("invlpg (%0)" :: "r"(vaddr) : "memory");
 }
 
-void test_vmm_basic_mapping();
-void test_vmm_simple();
-void debug_vmm_mapping();
-void debug_page_table_walk();
-void test_vmm_without_pool();
+void test_vmm(void);
+/*
+    Might be useful in the future Idk
+    struct limine_kernel_address_request *ka_req = get_kernel_address_request();
+    vaddr_t kernel_virt = ka_req->response->virtual_base;
+    paddr_t kernel_phys = ka_req->response->physical_base;
+    
+    extern char _kernel_start[];
+    extern char _kernel_end[];
 
+    uint64_t kernel_size = (uint64_t)_kernel_end - (uint64_t)_kernel_start;
+ 
+*/
 #endif

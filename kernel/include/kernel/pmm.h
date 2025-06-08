@@ -3,5 +3,16 @@
 
 #include <kernel/buddy_allocator.h>
 
+#define HEAP_MAGIC 0xDEADBEEF
+struct heap_header {
+    uint32_t magic;
+    uint32_t size;
+    uint8_t order;
+}__attribute__((aligned(8)));
+
+void *kmalloc(size_t size);
+void kfree(void* ptr);
+uint64_t pmm_alloc_page(void);
+void pmm_free_page(uint64_t phys);
 
 #endif

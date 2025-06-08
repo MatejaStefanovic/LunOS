@@ -6,11 +6,11 @@ int fb_init(void) {
     struct limine_framebuffer_request *fb_req = get_framebuffer_request();
 
     if (fb_req->response == NULL || fb_req->response->framebuffer_count < 1) {
-        return 0;
+        return -1;
     }
 
     primary_fb = fb_req->response->framebuffers[0];
-    return 1;
+    return 0;
 }
 
 struct limine_framebuffer* fb_get(void) {
