@@ -26,7 +26,7 @@ EOF
 cp /usr/share/limine/limine-bios.sys isodir/
 cp /usr/share/limine/limine-bios-cd.bin isodir/
 cp /usr/share/limine/limine-uefi-cd.bin isodir/
-
+cp ~/LunOS/lundberg.png isodir/
 # Create ISO using xorriso
 xorriso -as mkisofs -b limine-bios-cd.bin \
     -no-emul-boot -boot-load-size 4 -boot-info-table \

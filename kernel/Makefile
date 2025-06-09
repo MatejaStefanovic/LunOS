@@ -30,6 +30,7 @@ kernel/kernel.o \
 kernel/console/tty/tty.o \
 kernel/console/logging/klogging.o \
 kernel/tests/vmm_tests.o \
+kernel/memmgr/memmgr.o \
 
 OBJS=\
 $(KERNEL_OBJS) \

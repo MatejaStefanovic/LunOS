@@ -26,7 +26,10 @@ void buddy_allocator_init(){
             KWARN("Number of arenas is too small, yell at the dev to increase it\n");
             break;
         }
-   
+        // I don't want to allocate first page
+        if(!entry->base)
+            entry->base += PAGE_FRAME_SIZE;
+
         if(add_buddy_arena(buddy_arena_counter,entry->base, entry->length) == 0)
         {   
             uint64_t aligned_base = (entry->base + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);

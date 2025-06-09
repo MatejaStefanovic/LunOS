@@ -17,6 +17,42 @@ static struct page_table_t* get_current_pml4(){
     return current_pml4; 
 }
 
+void vmm_free_page_table(struct page_table_t *pt){ 
+    if(!pt){
+        KERROR("Tried to free a NULL ptr\n");
+        return;
+    }
+    uint64_t phys = (uint64_t)pt - hhdm_offset;
+    pmm_free_page(phys);
+}
+
+static void free_pd_table(paddr_t pd_phys) {
+    struct page_table_t *pd = (struct page_table_t*)(pd_phys + hhdm_offset);
+    
+    for (int i = 0; i < 512; i++) {
+        if (pd->entries[i] & PTE_PRESENT) {
+            paddr_t pt_phys = PTE_ADDR(pd->entries[i]);
+            struct page_table_t *pt = (struct page_table_t*)(pt_phys + hhdm_offset);
+            vmm_free_page_table(pt);  
+        }
+    }
+    
+    vmm_free_page_table(pd);
+}
+
+static void free_pdp_table(paddr_t pdp_phys) {
+    struct page_table_t *pdp = (struct page_table_t*)(pdp_phys + hhdm_offset);
+    
+    for (int i = 0; i < 512; i++) {
+        if (pdp->entries[i] & PTE_PRESENT) {
+            free_pd_table(PTE_ADDR(pdp->entries[i]));
+        }
+    }
+    
+    vmm_free_page_table(pdp);  
+}
+
+
 int vmm_init(){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
@@ -54,16 +90,16 @@ struct addr_space_t *vmm_create_address_space(){
         kfree(as);
         return NULL;
     }
-    // If we don't have kernel address space or our current addres space
-    // that we're creating is the kernel address space we want to return NULL
-    if(!kernel_as || kernel_as == as){
-        KWARN("Cannot map kernel address space to user VA space\n");
+
+    if(!kernel_as){
+        KWARN("Kernel address space somehow got destroyed?!\n");
         kprintf("Returning VA space without kernel mappings...\n");
         return as;
     }
-    for(int i = 256; i < 512; ++i){
+
+    for(int i = 256; i < 512; ++i)
         as->pml4->entries[i] = kernel_as->pml4->entries[i];
-    }
+    
     return as;
 }
 
@@ -72,14 +108,10 @@ void vmm_destroy_address_space(struct addr_space_t* as) {
         KERROR("Either tried to destroy kernel addr space or a NULL addr space\n");
         return;
     }
-    // Free all user page tables (keep kernel mappings)
+    
     for (int i = 0; i < 256; i++) {
         if (as->pml4->entries[i] & PTE_PRESENT) {
-            // Recursively free page directory pointer table
-            // Implementation would go deeper to free all levels
-            paddr_t pdp_phys = PTE_ADDR(as->pml4->entries[i]);
-            // Free the physical page 
-            pmm_free_page(pdp_phys);
+            free_pdp_table(PTE_ADDR(as->pml4->entries[i]));
         }
     }
     
@@ -87,6 +119,7 @@ void vmm_destroy_address_space(struct addr_space_t* as) {
     
     kfree(as);
 }
+
 void vmm_switch_address_space(struct addr_space_t* as) {
     if (!as || !as->pml4){ 
         KERROR("Cannot switch to a NULL address space\n");
@@ -107,14 +140,6 @@ struct page_table_t* vmm_alloc_page_table(void){
     return pt;
 }
 
-void vmm_free_page_table(struct page_table_t *pt){ 
-    if(!pt){
-        KERROR("Tried to free a NULL ptr\n");
-        return;
-    }
-    uint64_t phys = (uint64_t)pt - hhdm_offset;
-    pmm_free_page(phys);
-}
 
 pte_t* vmm_walk_page_table(struct addr_space_t *as, vaddr_t vaddr, bool create) {
     if(!as || !as->pml4)
@@ -240,7 +265,7 @@ int vmm_map_range(struct addr_space_t *as, vaddr_t vaddr,
     for (vaddr_t v = vstart, p = pstart; v < vend; v += PAGE_SIZE, p += PAGE_SIZE) {
     if (_vmm_map_page_no_flush(as, v, p, flags) != 0) {
             // Rollback on failure
-            // TODO: add vmm_unmap_range();
+            vmm_unmap_range(as, vstart, v - vstart);
             return -1;
         }
     }
@@ -311,6 +336,7 @@ paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr) {
 bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
 }
+
 
 void test_vmm() {
     kprintf("Testing VMM...\n");
