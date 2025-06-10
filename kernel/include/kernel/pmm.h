@@ -2,9 +2,11 @@
 #define __KERNEL_PHYSICAL_MEM_MANAGER_H
 
 #include <kernel/buddy_allocator.h>
+#include <kernel/slab_allocator.h>
 
-#define HEAP_MAGIC 0xDEADBEEF
-struct heap_header {
+#define ALLOC_MAGIC 0xDEADBEEF
+
+struct alloc_header {
     uint32_t magic;
     uint32_t size;
     uint8_t order;
