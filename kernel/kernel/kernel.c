@@ -25,7 +25,7 @@ void kernel_main() {
     //init_gdt(); 
 
     fb_clear(0x000000);  // Clear to black
-    terminal_initialize(0xFF0000, 0x000035);
+    terminal_initialize(0xFFFFFF, 0x000035);
 
     KSUCCESS("Terminal initialized properly\n");
 

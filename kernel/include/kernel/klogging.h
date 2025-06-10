@@ -23,31 +23,19 @@ void kprintf(const char* __restrict, ...);
 
 #define KSUCCESS(fmt, ...) \
     do { \
-        kprintf("["); \
-        terminal_setcolor(0x00FF00, 0x000035); \
-        kprintf("OK"); \
-        terminal_setcolor(0xFFFFFF, 0x000035); \
-        kprintf("] "); \
+        kprintf("[OK] "); \
         kprintf(fmt, ##__VA_ARGS__); \
     } while (0)
 
 #define KWARN(fmt, ...) \
     do { \
-        kprintf("["); \
-        terminal_setcolor(0xFFFF00, 0x000035); \
-        kprintf("WARNING"); \
-        terminal_setcolor(0xFFFFFF, 0x000035); \
-        kprintf("] "); \
+        kprintf("[WARNING] "); \
         kprintf(fmt, ##__VA_ARGS__); \
     } while (0)
 
 #define KERROR(fmt, ...) \
     do { \
-        kprintf("["); \
-        terminal_setcolor(0xFF0000, 0x000035); \
-        kprintf("ERROR"); \
-        terminal_setcolor(0xFFFFFF, 0x000035); \
-        kprintf("] "); \
+        kprintf("[ERROR] "); \
         kprintf(fmt, ##__VA_ARGS__); \
     } while (0)
 

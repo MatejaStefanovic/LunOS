@@ -45,7 +45,10 @@ void *kmalloc(size_t size) {
     alloc_h->magic = ALLOC_MAGIC;
     alloc_h->size = size;
     alloc_h->order = order;
-    
+   
+    // Cast is for pointer arithmetic, C doesn't allow void * arithmetic 
+    // start of data points to rigtt after our header because that's where our real
+    // allocated memory starts, end magic is placed right where that memory ends
     char *start_of_data = (char *)virt_addr + sizeof(struct alloc_header);
     uint32_t *end_magic = (uint32_t *)(start_of_data + alloc_h->size);
     *end_magic = ALLOC_MAGIC;
@@ -61,7 +64,6 @@ void kfree(void *ptr){
 
     struct slab *slab = slab_find_containing(ptr);
     if (slab) {
-        // This came from slab allocator
         slab_free(ptr);
         return;
     }
@@ -71,17 +73,17 @@ void kfree(void *ptr){
     // and that way we got our header back
     struct alloc_header* header = (struct alloc_header*)((char*)ptr - sizeof(struct alloc_header));
 
-    // The magic number is used after we retrieve the heap to check whether 
+    // The magic number is used after we retrieve the allocated memory to check whether 
     // something messed with our values, if it is intact we're good, same as above
     if(header->magic != ALLOC_MAGIC){
-        KERROR("Uh oh something ran over our heap - this ain't good\n");
+        KERROR("Uh oh something ran over our allocated memory - this ain't good\n");
         
         // Remember we placed it ourselves right after kmalloc requested size
         // [header][requested size to alloc][end magic] is what it looks like in 
         // memory and this ptr starts here -^
         uint32_t *end_magic = (uint32_t*)((char*)ptr + header->size);
         if(*end_magic != ALLOC_MAGIC){
-            KERROR("Uh oh not only has something ran over our heap it went past it\n");
+            KERROR("Uh oh not only has something ran over our allocated memory it went past it\n");
             return;
         }
         return;
