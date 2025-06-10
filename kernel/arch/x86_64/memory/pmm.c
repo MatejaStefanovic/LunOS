@@ -67,6 +67,7 @@ void kfree(void *ptr){
         slab_free(ptr);
         return;
     }
+
     // We get our header pretty much the same way we skipped over it last time
     // our ptr points to right after the header so what we want is to just
     // subtract the start address of that with the size of our alloc_header struct

@@ -6,6 +6,9 @@
  * which we uniformally call tasks */
 #include <kernel/vmm.h>
 
+#define STACK_SIZE (8 * 1024 * 1024)  // 8MB stack
+#define GUARD_SIZE PAGE_SIZE 
+
 // Region permission flags
 #define RP_READ     (1 << 0)
 #define RP_WRITE    (1 << 1) 

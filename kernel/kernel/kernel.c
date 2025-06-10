@@ -26,16 +26,11 @@ void kernel_main() {
 
     fb_clear(0x000000);  // Clear to black
     terminal_initialize(0xFFFFFF, 0x000035);
-
     KSUCCESS("Terminal initialized properly\n");
-
-    kprintf("Initializing Interrupt table...\n");
-    init_idt(); // Set up IDT
-    KSUCCESS("Interrupt setup was successfull\n");  
     
-    kprintf("Setting up buddy allocator ...\n");
+    init_idt(); // Set up IDT
+    
     buddy_allocator_init();
-    KSUCCESS("Buddy allocator initialized properly\n");
     
     slab_allocator_init();
 
@@ -46,7 +41,7 @@ void kernel_main() {
    
     kprintf("\n");
     test_vmm();
-    run_vmm_tests();
+    //run_vmm_tests();
     kprintf("I'm like hey what's up hello");
     hcf();
 }

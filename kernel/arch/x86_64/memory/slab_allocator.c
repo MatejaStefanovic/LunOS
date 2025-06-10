@@ -22,7 +22,7 @@ void slab_allocator_init(){
 void slab_cache_init(struct slab_cache *cache, size_t object_size){
     cache->object_size = object_size;
     cache->objects_per_slab = calculate_objects_per_slab(object_size);
-    cache->slab_size = PAGE_FRAME_SIZE; 
+    cache->slab_size = 2*PAGE_FRAME_SIZE; 
     
     // Initialize lists
     cache->full_slabs = NULL;
@@ -42,12 +42,12 @@ size_t calculate_objects_per_slab(size_t object_size){
     // Slab allocator takes one page from buddy allocator and divides it up 
     // but we need to store the slab header at the start of the slab for metadata 
     // hence why we calculate total object count like this
-    size_t usable_space = PAGE_FRAME_SIZE - sizeof(struct slab);
+    size_t usable_space = 2*PAGE_FRAME_SIZE - sizeof(struct slab);
     return usable_space / object_size;
 }
 
 struct slab *slab_create(struct slab_cache *cache){
-    uint64_t phys_addr = buddy_alloc_page();
+    uint64_t phys_addr = buddy_alloc_pages(1);
     
     if(phys_addr == 0){
         KERROR("Failed to allocate page for a new slab\n");
@@ -174,7 +174,7 @@ void slab_free(void *ptr){
 struct slab *slab_find_containing(void *ptr){
     // Align down to page size if not aligned (shouldn't be as slab header is there)
     uint64_t addr = (uint64_t)ptr;
-    uint64_t page_addr = addr & ~(PAGE_FRAME_SIZE - 1);
+    uint64_t page_addr = addr & ~(2 * PAGE_FRAME_SIZE - 1);
 
     struct slab *slab = (struct slab *)page_addr;
     // double check if the slab belongs to a cache 
@@ -239,7 +239,7 @@ void slab_destroy(struct slab *slab){
     cache->total_slabs--;
     cache->total_objects -= cache->objects_per_slab;
 
-    buddy_free_page(slab->phys_addr);
+    buddy_free_pages(slab->phys_addr, 1);
     kprintf("Destroyed slab for cache (object_size=%lu)\n", cache->object_size);
 }
 
@@ -264,5 +264,23 @@ void slab_cache_shrink(struct slab_cache *cache) {
     if (freed > 0) {
         kprintf("Kept %d empty slabs and freed %d empty slabs from cache (object_size=%lu)\n", 
               kept, freed, cache->object_size);
+    }
+}
+
+void slab_print_cache_stats(struct slab_cache *cache) {
+    kprintf("Slab Cache Stats (object_size=%lu):\n", cache->object_size);
+    kprintf("  Total objects: %lu\n", cache->total_objects);
+    kprintf("  Allocated objects: %lu\n", cache->allocated_objects);
+    kprintf("  Free objects: %lu\n", cache->total_objects - cache->allocated_objects);
+    kprintf("  Total slabs: %lu\n", cache->total_slabs);
+    kprintf("  Utilization: %lu%%\n", 
+            cache->total_objects ? (cache->allocated_objects * 100) / cache->total_objects : 0);
+}
+
+void slab_print_all_stats(void) {
+    kprintf("\n=== Slab Allocator Statistics ===\n");
+    for (size_t i = 0; i < NUM_SLAB_SIZES; i++) {
+        slab_print_cache_stats(&slab_caches[i]);
+        kprintf("\n");
     }
 }

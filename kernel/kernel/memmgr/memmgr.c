@@ -1,5 +1,6 @@
 #include <kernel/memmgr.h>
 #include <kernel/pmm.h>
+
 int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start, 
         vaddr_t end, uint64_t flags){
 
@@ -15,6 +16,7 @@ int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start,
     region->flags = flags;
     region->next = mm->regions;
     mm->regions = region;
+
     return 0;
 }
 
@@ -101,8 +103,13 @@ int mm_setup_executable(struct mem_descriptor_t *mm,
     mm_add_region(mm, data_start, data_end, RP_READ | RP_WRITE);
     
     mm->brk = data_end + PAGE_SIZE;
+
+    vaddr_t stack_top = 0x00007FFFFFFFFFFF;
+    vaddr_t stack_bottom = stack_top - STACK_SIZE + 1;
+    vaddr_t guard_stack = stack_bottom - GUARD_SIZE;
     
-    //mm_add_region(mm, 0x, 0x, VM_READ | VM_WRITE | VM_STACK); 
+    mm_add_region(mm, guard_stack, stack_bottom - 1, 0);
+    mm_add_region(mm, stack_bottom, stack_top, RP_READ | RP_WRITE);
     
     return 0;
 }
