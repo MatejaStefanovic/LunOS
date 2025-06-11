@@ -57,25 +57,6 @@ $(ARCHDIR)/boot/crt/crtbegin.o $(ARCHDIR)/boot/crt/crtend.o:
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-iso: LunOS.kernel $(LIMINE_CFG)
-	mkdir -p isodir
-	cp LunOS.kernel isodir/
-	cp $(LIMINE_CFG) isodir/
-	cp /usr/share/limine/limine-bios.sys isodir/
-	cp /usr/share/limine/limine-bios-cd.bin isodir/
-	cp /usr/share/limine/limine-uefi-cd.bin isodir/
-	xorriso -as mkisofs -b limine-bios-cd.bin \
-		-no-emul-boot -boot-load-size 4 -boot-info-table \
-		--efi-boot limine-uefi-cd.bin \
-		-efi-boot-part --efi-boot-image --protective-msdos-label \
-		isodir -o LunOS.iso
-	limine bios-install LunOS.iso
-
-
-clean:
-	rm -f LunOS.kernel
-	rm -f $(OBJS) *.o */*.o */*/*.o
-	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
 
 install: install-headers install-kernel
 
