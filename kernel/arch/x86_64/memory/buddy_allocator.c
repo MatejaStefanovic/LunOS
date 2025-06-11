@@ -272,10 +272,6 @@ void buddy_free_page(uint64_t phys_addr) {
 
 
 
-
-
-
-
 void print_buddy_arena(uint8_t buddy_arena_counter) {
     struct buddy_arena *arena = &buddy_arenas[buddy_arena_counter];
     for (int order = 0; order <= arena->max_arena_order; ++order) {
