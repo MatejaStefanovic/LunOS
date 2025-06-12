@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define SLAB_MAGIC 0xCAFEBABEDEADBABE
 
 // We use this to make a linked list but it is not metadata
 // once we allocate the object the data will just run over the pointer
@@ -14,10 +15,10 @@ struct free_object {
     struct free_object *next;
 };
 
-
 // 1 slab = 1 page and slab contains smaller objects within
 // slab header is placed at the beginning of each page
 struct slab {
+    uint64_t magic;
     struct slab_cache *cache;      // points back to slab cache
     uint64_t phys_addr;            
     size_t free_count;             
@@ -30,6 +31,7 @@ struct slab_cache {
     size_t object_size;            // Size of objects in this cache
     size_t objects_per_slab;       // Number of objects per slab
     size_t slab_size;              // Size of each slab (usually PAGE_FRAME_SIZE)
+                                   // but we use 2*PAGE_FRAME_SIZE
     
     // Slab lists
     struct slab *full_slabs;       // Slabs with no free objects
@@ -52,8 +54,9 @@ size_t calculate_objects_per_slab(size_t object_size);
 struct slab *slab_create(struct slab_cache *cache);
 
 void *slab_alloc(struct slab_cache *cache);
-void slab_free(void *ptr);
+void slab_free(struct slab *slab, void *ptr);
 void *slab_alloc_size(size_t size);
+bool is_slab_address(void *ptr);
 
 struct slab *slab_find_containing(void *ptr);
 void slab_remove_from_list(struct slab *target_slab, struct slab_cache *cache);

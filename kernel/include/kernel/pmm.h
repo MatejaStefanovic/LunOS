@@ -3,6 +3,7 @@
 
 #include <kernel/buddy_allocator.h>
 #include <kernel/slab_allocator.h>
+#include <stdbool.h>
 
 #define ALLOC_MAGIC 0xDEADBEEF
 
@@ -10,6 +11,7 @@ struct alloc_header {
     uint32_t magic;
     uint32_t size;
     uint8_t order;
+    bool is_slab;
 }__attribute__((aligned(8)));
 
 void *kmalloc(size_t size);

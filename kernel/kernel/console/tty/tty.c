@@ -21,7 +21,7 @@ void get_screen_dimensions(){
         hcf();
     total_columns = fb->width / FONT_WIDTH;
     total_rows = fb->height / FONT_HEIGHT;
-    total_rows -= 10; // QEMU is buggy so this is only for debug
+    total_rows -= 10;
 }
 
 void terminal_initialize(uint32_t fg, uint32_t bg) {

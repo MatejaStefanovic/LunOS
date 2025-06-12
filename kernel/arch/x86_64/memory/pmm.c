@@ -2,6 +2,7 @@
 
 #define SLAB_THRESHOLD 2048  // Use slab for allocations <= 2KB
 
+
 void *kmalloc(size_t size) {
     if (!size) {
         KWARN("Ayo why'd you request nothing?\n");
@@ -64,7 +65,7 @@ void kfree(void *ptr){
 
     struct slab *slab = slab_find_containing(ptr);
     if (slab) {
-        slab_free(ptr);
+        slab_free(slab, ptr);
         return;
     }
 

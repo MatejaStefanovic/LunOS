@@ -5,7 +5,7 @@
 #include <kernel/vmm.h>
 #include <kernel/pmm.h>
 
-
+#include <tests/malloc_tests.h>
 #include <tests/vmm_tests.h>
 // Set the base revision to 3
 __attribute__((used, section(".limine_requests")))
@@ -40,8 +40,12 @@ void kernel_main() {
         KSUCCESS("Virtual memory manager initialized properly\n");
    
     kprintf("\n");
-    test_vmm();
-    //run_vmm_tests();
+   
+    //test_vmm();
+    run_kmalloc_tests();
+    run_advanced_kmalloc_tests();
+    
+    slab_print_all_stats();
     kprintf("I'm like hey what's up hello");
     hcf();
 }

@@ -7,6 +7,8 @@ set -e
 #qemu-system-x86_64 -cdrom LunOS.iso -m 512M -enable-kvm 2>/dev/null || \
 #qemu-system-x86_64 -cdrom LunOS.iso -m 512M -monitor stdio
 #qemu-system-x86_64 -cdrom LunOS.iso -m 512M
+
 qemu-system-x86_64 -bios /usr/share/OVMF/x64/OVMF.4m.fd -cdrom LunOS.iso -m 512M
+
 # Alternative with debugging (uncomment if needed)
 #qemu-system-x86_64 -s -d cpu_reset -cdrom LunOS.iso -m 512M

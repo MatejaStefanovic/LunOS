@@ -22,7 +22,7 @@ void slab_allocator_init(){
 void slab_cache_init(struct slab_cache *cache, size_t object_size){
     cache->object_size = object_size;
     cache->objects_per_slab = calculate_objects_per_slab(object_size);
-    cache->slab_size = 2*PAGE_FRAME_SIZE; 
+    cache->slab_size = 2 * PAGE_FRAME_SIZE; 
     
     // Initialize lists
     cache->full_slabs = NULL;
@@ -42,13 +42,12 @@ size_t calculate_objects_per_slab(size_t object_size){
     // Slab allocator takes one page from buddy allocator and divides it up 
     // but we need to store the slab header at the start of the slab for metadata 
     // hence why we calculate total object count like this
-    size_t usable_space = 2*PAGE_FRAME_SIZE - sizeof(struct slab);
+    size_t usable_space = (2 * PAGE_FRAME_SIZE) - sizeof(struct slab);
     return usable_space / object_size;
 }
 
 struct slab *slab_create(struct slab_cache *cache){
     uint64_t phys_addr = buddy_alloc_pages(1);
-    
     if(phys_addr == 0){
         KERROR("Failed to allocate page for a new slab\n");
         return NULL;
@@ -61,7 +60,7 @@ struct slab *slab_create(struct slab_cache *cache){
     slab->phys_addr = phys_addr;
     slab->free_count = cache->objects_per_slab;
     slab->next = NULL;
-    
+    slab->magic = SLAB_MAGIC;
     slab->free_list = NULL;
 
     // Must cast to char * since C doesn't allow void pointer arithemtic
@@ -133,22 +132,20 @@ void *slab_alloc(struct slab_cache *cache){
     return (void *)obj;
 }
 
-void slab_free(void *ptr){
+void slab_free(struct slab *slab, void *ptr){
     if(!ptr){
         KERROR("Cannot free a NULL pointer, caller: slab_free\n");
         return;
     }
-
-    struct slab *slab = slab_find_containing(ptr);
+    
     if(!slab){
         KERROR("Couldn't find slab containing pointer\n");
         return;
     }
 
     struct slab_cache *cache = slab->cache;
-
     // We'll get the address of the object we want to free so we can 
-    // just cast it without issues 
+    // just cast it without issues  
     struct free_object *obj = (struct free_object *)ptr;
     
     // Back to the free list you go
@@ -162,38 +159,40 @@ void slab_free(void *ptr){
         slab_remove_from_list(slab, cache);
         // the hell does this do
         slab->next = cache->partial_slabs;
-        cache->partial_slabs = slab->next;
+        cache->partial_slabs = slab;
     } // Had one obj allocated now is empty
     else if(slab->free_count == cache->objects_per_slab){
         slab_remove_from_list(slab, cache);
         slab->next = cache->empty_slabs;
-        cache->empty_slabs = slab->next;
+        cache->empty_slabs = slab;
     }
 }
 
-struct slab *slab_find_containing(void *ptr){
-    // Align down to page size if not aligned (shouldn't be as slab header is there)
-    uint64_t addr = (uint64_t)ptr;
-    uint64_t page_addr = addr & ~(2 * PAGE_FRAME_SIZE - 1);
-
-    struct slab *slab = (struct slab *)page_addr;
-    // double check if the slab belongs to a cache 
-    if(!slab->cache){
-        KERROR("Slab that was found wasn't actually a slab as its cache was NULL\n");
+struct slab *slab_find_containing(void *ptr) {
+    uintptr_t slab_start = (uintptr_t)ptr & ~((2 * PAGE_FRAME_SIZE) - 1);
+    struct slab *slab = (struct slab*)slab_start;
+    
+    if (slab->magic != SLAB_MAGIC)
         return NULL;
-    }
-    // Skip right after the slab header or rather to where our free objs start
+    
+    // Verify it's actually a valid slab with a cache
+    if (!slab->cache) 
+        return NULL;
+    
+    // Pointer is within the objects area of this slab
     char *objects_start = (char *)slab + sizeof(struct slab);
-    // End is at obj start + amount of objs * size of objs
     char *objects_end = objects_start + (slab->cache->objects_per_slab * slab->cache->object_size);
-   
-    // Again cast only for pointer arithmetic 
-    if((char *)ptr >= objects_start && (char *)ptr <= objects_end)
+    
+    if ((char *)ptr >= objects_start && (char *)ptr < objects_end) 
         return slab;
-
+    
+    
     return NULL;
 }
 
+bool is_slab_address(void *ptr) {
+    return slab_find_containing(ptr) != NULL;
+}
 
 void slab_remove_from_list(struct slab *slab, struct slab_cache *cache){
     // What are the odds this is used for linked lists?!?!?!?!?!?!
@@ -266,6 +265,7 @@ void slab_cache_shrink(struct slab_cache *cache) {
               kept, freed, cache->object_size);
     }
 }
+
 
 void slab_print_cache_stats(struct slab_cache *cache) {
     kprintf("Slab Cache Stats (object_size=%lu):\n", cache->object_size);
