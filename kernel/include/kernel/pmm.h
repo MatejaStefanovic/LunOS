@@ -5,10 +5,13 @@
 #include <kernel/slab_allocator.h>
 #include <stdbool.h>
 
-#define ALLOC_MAGIC 0xDEADBEEF
+#define ALLOC_MAGIC 0xDEADBEEFCAFEBABE
+// We detect double free with this, if you kmalloc and kfree twice if we don't stop it
+// it could corrupt the allocator
+#define FREED_PATTERN 0xDEADDEADDEADDEAD 
 
 struct alloc_header {
-    uint32_t magic;
+    uint64_t magic;
     uint32_t size;
     uint8_t order;
     bool is_slab;

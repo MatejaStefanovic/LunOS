@@ -40,12 +40,12 @@ void kernel_main() {
         KSUCCESS("Virtual memory manager initialized properly\n");
    
     kprintf("\n");
-   
-    //test_vmm();
+/*   
+    test_vmm();
     run_kmalloc_tests();
     run_advanced_kmalloc_tests();
-    
     slab_print_all_stats();
+*/
     kprintf("I'm like hey what's up hello");
     hcf();
 }
@@ -57,13 +57,4 @@ void kernel_main() {
     kprintf("What happened in Barcelona happened...\n");
     kprintf("What happened in Madrdid happened and we are here, ");
     kprintf("we're in Rome...\n\n");
-
-    print_buddy_arena(0);
-    void *ptr = kmalloc(4096*sizeof(struct idt_entry_t));
-    kprintf("\n");
-    print_buddy_arena(0);
-    kprintf("\n");
-    kfree(ptr);
-    print_buddy_arena(0);
-    hcf();
 */

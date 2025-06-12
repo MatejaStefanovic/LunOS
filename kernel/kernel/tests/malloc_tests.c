@@ -836,6 +836,24 @@ void test_error_path_handling(void) {
         kprintf("WARNING: Recovery allocation failed\n");
     }
 }
+void test_double_free_detection(void) {
+    kprintf("=== Double Free Detection Test ===\n");
+    kprintf("WARNING: This test may crash if double-free protection is not implemented\n");
+    
+    void *ptr = kmalloc(128);
+    if (ptr) {
+        memset(ptr, 0xDD, 128);
+        kprintf("Allocated 128 bytes at %p\n", ptr);
+        
+        kfree(ptr);
+        kprintf("First free completed\n");
+        
+        // This should be detected and handled gracefully
+        kprintf("Attempting double free...\n");
+        kfree(ptr);  // Double free - should be handled safely
+        kprintf("Double free attempt completed (should be safe)\n");
+    }
+}
 
 int run_advanced_kmalloc_tests(void) {
     kprintf("Starting advanced security and robustness tests for kmalloc/kfree\n");
@@ -846,7 +864,8 @@ int run_advanced_kmalloc_tests(void) {
     
     test_pathological_fragmentation();
     test_error_path_handling();
-    
+    test_double_free_detection();
+   
     kprintf("\n=== STABILITY TESTS ===\n");
     
     test_long_running_stability();

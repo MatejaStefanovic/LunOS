@@ -2,7 +2,7 @@
 #include <kernel/buddy_allocator.h>
 
 static size_t slab_sizes[] = {
-    8, 16, 32, 64, 128, 256, 512, 1024, 2048  
+    16, 32, 64, 128, 256, 512, 1024, 2048  
 };
 
 #define NUM_SLAB_SIZES (sizeof(slab_sizes) / sizeof(slab_sizes[0]))
@@ -147,7 +147,7 @@ void slab_free(struct slab *slab, void *ptr){
     // We'll get the address of the object we want to free so we can 
     // just cast it without issues  
     struct free_object *obj = (struct free_object *)ptr;
-    
+    obj->magic = OBJECT_POISON;
     // Back to the free list you go
     obj->next = slab->free_list;
     slab->free_list = obj;

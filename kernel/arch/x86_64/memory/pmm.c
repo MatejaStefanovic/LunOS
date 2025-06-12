@@ -51,7 +51,7 @@ void *kmalloc(size_t size) {
     // start of data points to rigtt after our header because that's where our real
     // allocated memory starts, end magic is placed right where that memory ends
     char *start_of_data = (char *)virt_addr + sizeof(struct alloc_header);
-    uint32_t *end_magic = (uint32_t *)(start_of_data + alloc_h->size);
+    uint64_t *end_magic = (uint64_t *)(start_of_data + alloc_h->size);
     *end_magic = ALLOC_MAGIC;
     
     return (void *)start_of_data;
@@ -59,12 +59,16 @@ void *kmalloc(size_t size) {
 
 void kfree(void *ptr){
     if(!ptr){
-        KERROR("Passed a NULL pointer to kfree - don't do this\n");
         return;
     }
 
     struct slab *slab = slab_find_containing(ptr);
     if (slab) {
+        struct free_object *free_obj = (struct free_object*)ptr;
+        if (free_obj->magic == FREED_PATTERN) {
+            KERROR("Double free detected in slab object at %p\n", ptr);
+            return;
+        }    
         slab_free(slab, ptr);
         return;
     }
@@ -75,22 +79,32 @@ void kfree(void *ptr){
     // and that way we got our header back
     struct alloc_header* header = (struct alloc_header*)((char*)ptr - sizeof(struct alloc_header));
 
+    if (header->magic == FREED_PATTERN) {
+       KERROR("Double free detected in buddy allocation at %p\n", ptr);
+       return;
+    }
+    
+    bool corrupted = false;
     // The magic number is used after we retrieve the allocated memory to check whether 
     // something messed with our values, if it is intact we're good, same as above
     if(header->magic != ALLOC_MAGIC){
         KERROR("Uh oh something ran over our allocated memory - this ain't good\n");
-        
-        // Remember we placed it ourselves right after kmalloc requested size
-        // [header][requested size to alloc][end magic] is what it looks like in 
-        // memory and this ptr starts here -^
-        uint32_t *end_magic = (uint32_t*)((char*)ptr + header->size);
-        if(*end_magic != ALLOC_MAGIC){
-            KERROR("Uh oh not only has something ran over our allocated memory it went past it\n");
-            return;
-        }
-        return;
+        corrupted = true;
     }
 
+    // Remember we placed it ourselves right after kmalloc requested size
+    // [header][requested size to alloc][end magic] is what it looks like in 
+    // memory and this ptr starts here -^
+    uint64_t *end_magic = (uint64_t*)((char*)ptr + header->size);
+    if(*end_magic != ALLOC_MAGIC){
+        KERROR("Uh oh not only has something ran over our allocated memory it went past it\n");
+        corrupted = true;
+    }
+
+    if(corrupted)
+        return;
+
+    header->magic = FREED_PATTERN;
     uint64_t phys_addr = virt_to_phys(header);
     buddy_free_pages(phys_addr, header->order);
 }

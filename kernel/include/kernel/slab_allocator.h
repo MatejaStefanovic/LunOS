@@ -6,12 +6,14 @@
 #include <stdbool.h>
 
 #define SLAB_MAGIC 0xCAFEBABEDEADBABE
+#define OBJECT_POISON 0xDEADDEADDEADDEAD
 
 // We use this to make a linked list but it is not metadata
 // once we allocate the object the data will just run over the pointer
 // for example: 64 byte block, 8 bytes for pointer but once we allocate its
 // those initial 8 bytes at the start will just be ran over with user data
 struct free_object {
+    uint64_t magic;
     struct free_object *next;
 };
 
