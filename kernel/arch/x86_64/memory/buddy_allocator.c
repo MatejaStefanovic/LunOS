@@ -5,7 +5,6 @@ uint8_t buddy_arena_counter = 0;
 
 void buddy_allocator_init(){
     struct limine_memmap_request *mmap_req = get_memmap_request();
-   
     if(!mmap_req){
         KERROR("CRITICAL ERROR: Couldn't not get memory map\nHalting");
         hcf();
@@ -26,7 +25,10 @@ void buddy_allocator_init(){
             KWARN("Number of arenas is too small, yell at the dev to increase it\n");
             break;
         }
-   
+        // I don't want to allocate first page
+        if(!entry->base)
+            entry->base += PAGE_FRAME_SIZE;
+
         if(add_buddy_arena(buddy_arena_counter,entry->base, entry->length) == 0)
         {   
             uint64_t aligned_base = (entry->base + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);
@@ -36,8 +38,8 @@ void buddy_allocator_init(){
             KSUCCESS("Buddy Arena %d initialized\n", buddy_arena_counter);
             kprintf("     Base:  0x%lx\n", aligned_base);
             kprintf("     Size:  %lu bytes (%lu MiB)\n", aligned_len, aligned_len / (1024 * 1024));
-           
-            ++buddy_arena_counter;        
+            ++buddy_arena_counter;
+
         }
     }
 }
@@ -47,6 +49,15 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
         KERROR("Not enough arenas, yell at the dev to increase it\n");
         return -1;    
     }
+    // CRITICAL! For whatever reason QEMU + Limine with UEFI is retarded
+    // so it allocated VGA memory hole as FREE meanwhile it isn't 
+    // and if I try to test it on non real hardware address A0000 will always 
+    // page fault therefore we SKIP this shit entirely for testing with QEMU
+    if(arena_idx == 0){
+        buddy_arena_counter++;
+        return 0;
+    }
+    
     // Not aligning to page size is a B A D idea : ) 
     uint64_t aligned_base = (base + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);
     uint64_t end = base + len;
@@ -84,58 +95,60 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
 }
 
 void populate_buddy_blocks(uint8_t arena_idx){
-    struct buddy_arena *arena = &buddy_arenas[arena_idx];
+struct buddy_arena *arena = &buddy_arenas[arena_idx];
     
     uint64_t current_addr = arena->base;
-    uint64_t remaining = arena->length;
+    uint64_t end_addr = arena->base + arena->length;
     uint8_t max_order = arena->max_arena_order;
     
-    while (remaining >= PAGE_FRAME_SIZE) {
-        int order = max_order;
+    while (current_addr < end_addr) {
+        uint64_t remaining = end_addr - current_addr;
         
-        // Find largest order block that fits and has proper buddy alignment
-        while (order >= 0) {
-            uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
-            
-            if (block_size > remaining) {
-                --order;
-                continue;
-            }
-            
-            // Check buddy alignment
-            uint64_t block_offset = current_addr - arena->base;
-            uint64_t block_pfn = block_offset / PAGE_FRAME_SIZE;
-            
-            if ((block_pfn & ((1ULL << order) - 1)) == 0) 
-                break; // This alignment works
-            
-            --order;
-        }
-        
-        if (order < 0) 
+        if (remaining < PAGE_FRAME_SIZE)
             break;
         
-        uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
+        // Find the largest order that:
+        // 1. Fits in remaining space
+        // 2. Is properly aligned for buddy allocation
+        int best_order = -1;
         
-        // With HHDM all of our memory is mapped to HHDM offset and above
-        // and phys to virt will translate with the offset in mind
+        for (int order = max_order; order >= 0; --order) {
+            uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
+            
+            // Does it fit?
+            if (block_size > remaining)
+                continue;
+            
+            // Is it properly aligned?
+            if ((current_addr & (block_size - 1)) == 0) {
+                best_order = order;
+                break;
+            }
+        }
+        
+        if (best_order < 0) {
+            // Can't even fit a single page? Move to next page boundary
+            current_addr = (current_addr + PAGE_FRAME_SIZE - 1) & ~(PAGE_FRAME_SIZE - 1);
+            continue;
+        }
+        
+        uint64_t block_size = (1ULL << best_order) * PAGE_FRAME_SIZE;
+        
+        // Create the block
         struct free_block *block = (struct free_block*)phys_to_virt(current_addr);
-        
-        block->current_order = order;
+        block->current_order = best_order;
         block->phys_addr = current_addr;
-        block->next = arena->free_list[order];
+        block->next = arena->free_list[best_order];
+        arena->free_list[best_order] = block;
         
-        arena->free_list[order] = block;
-
         current_addr += block_size;
-        remaining -= block_size;
     }
 }
 
 uint64_t buddy_alloc_pages(uint8_t order){
     if (order > MAX_SUPPORTED_ORDER)
         return 0;
-
+    
     for(int i = 0; i < buddy_arena_counter; ++i){
         struct buddy_arena *arena = &buddy_arenas[i];
 
@@ -158,7 +171,7 @@ uint64_t buddy_alloc_pages(uint8_t order){
             // Unlink the block as we split it
             struct free_block *block = arena->free_list[j];
             arena->free_list[j] = block->next;
-            
+  
             // K = j - 1 as we try to get the appropriate order
             // This handles the case if we went up 2 orders higher (or more) 
             // instead of 1 - basically it just keeps on splitting until our
@@ -209,7 +222,7 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
     }
     // Time to coalsce
 
-    kprintf("\nphys_addr: %lx\n", phys_addr);
+    //kprintf("\nphys_addr: %lx\n", phys_addr);
     while(order < arena->max_arena_order){
 
         uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
@@ -218,7 +231,7 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
         // Thank you Donald Knuth 
         uint64_t buddy_addr = phys_addr ^ block_size; 
         
-        kprintf("buddy_addr %lx\n", buddy_addr);
+        //kprintf("buddy_addr %lx\n", buddy_addr);
         
         struct free_block **current = &arena->free_list[order];
         bool found_buddy = false;
@@ -264,10 +277,6 @@ uint64_t buddy_alloc_page(void) {
 void buddy_free_page(uint64_t phys_addr) {
     buddy_free_pages(phys_addr, 0);
 }
-
-
-
-
 
 
 

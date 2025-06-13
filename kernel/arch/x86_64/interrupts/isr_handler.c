@@ -1,6 +1,7 @@
 #include <kernel/isr_handler.h>
 #include <kernel/klogging.h>
 #include <kernel/halt.h>
+#include <kernel/memmgr.h>
 
 void decode_page_fault_error(uint64_t err_code) {
     kprintf("Error code: 0x%lx\n", err_code);
@@ -36,9 +37,16 @@ void isr0_divide_by_zero(struct regs_t *r){
 }
 
 void isr14_page_fault(struct regs_t *r){
-    kprintf("ERROR: page fault occurred at address: %lx\n", r->cr2);
+    if(r->cr2 >= KERNEL_SPACE_START){
+        KERROR("Page fault occurred at address: %lx\n", r->cr2);
+        decode_page_fault_error(r->err_code);
+        kprintf("This page fault occured in kernel space.. Time to panic :d\n");
+        hcf();
+    }
+    KERROR("Page fault occurred at address: %lx\n", r->cr2);
     decode_page_fault_error(r->err_code);
-
+    hcf();
+    //mm_page_fault_handler(r->cr2, r->err_code);
 }
 
 void isr_reserved(){
@@ -54,7 +62,7 @@ void isr_dispatch(struct regs_t *r){
             isr14_page_fault(r);
             break;
         
-        case 15:
+            case 15:
         case 22:
         case 23:
         case 24:

@@ -36,12 +36,6 @@ struct page_table_t {
     pte_t entries[512];
 } __attribute__((aligned(PAGE_SIZE)));
 
-struct mem_region_t{
-    vaddr_t start;
-    vaddr_t end;
-    uint64_t flags;
-    struct mem_region_t* next;
-};
 
 struct addr_space_t{
     struct page_table_t *pml4;
@@ -51,7 +45,7 @@ struct addr_space_t{
 
 int vmm_init(void);
 struct addr_space_t *vmm_create_address_space(void);
-void vmm_remove_address_space(struct addr_space_t *as);
+void vmm_destroy_address_space(struct addr_space_t *as);
 
 struct page_table_t *vmm_alloc_page_table(void);
 void vmm_free_page_table(struct page_table_t *pt);
@@ -69,12 +63,6 @@ int vmm_unmap_range(struct addr_space_t *as, vaddr_t vaddr, uint64_t size);
 paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr);
 bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr);
 void vmm_switch_address_space(struct addr_space_t* as);
-
-// Track memory regions
-void vmm_add_region(struct addr_space_t *as, vaddr_t vaddr, paddr_t paddr, uint64_t size);
-void vmm_remove_region(struct addr_space_t *as, vaddr_t vaddr);
-struct mem_region_t *find_region(struct addr_space_t *as, vaddr_t vaddr);
-
 
 int vmm_handle_page_fault(struct addr_space_t* as, vaddr_t fault_addr, 
                             uint64_t error_code);

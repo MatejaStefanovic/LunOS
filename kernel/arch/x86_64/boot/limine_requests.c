@@ -41,6 +41,12 @@ static volatile struct limine_kernel_address_request kernel_address_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_smp_request smp_request = {
+    .id = LIMINE_SMP_REQUEST,
+    .revision = 0
+};
+
 // Getter functions
  
 struct limine_framebuffer_request* get_framebuffer_request(void) {
@@ -55,6 +61,11 @@ struct limine_hhdm_request* get_hhdm_request(void) {
     return (struct limine_hhdm_request*)&hhdm_request;
 }
 
-struct limine_kernel_address_request* get_kernel_address_request(void){
+struct limine_kernel_address_request* get_kernel_address_request(void) {
     return (struct limine_kernel_address_request*)&kernel_address_request;
 }
+
+struct limine_smp_request* get_smp_request(void) {
+    return (struct limine_smp_request*)&smp_request;
+}
+
