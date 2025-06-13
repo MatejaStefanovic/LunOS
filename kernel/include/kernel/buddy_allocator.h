@@ -6,7 +6,7 @@
 #define PAGE_FRAME_SIZE 4096
 
 #include <kernel/memutils.h>
-
+#include <kernel/klogging.h>
 struct free_block {
     uint8_t current_order;
     uint64_t phys_addr;         // Physical address of the free block
@@ -37,7 +37,8 @@ void buddy_free_page(uint64_t phys_addr);
 
 // Debug functions
 void print_buddy_arena(uint8_t buddy_arena_counter);
-void verify_buddy_invariants(uint8_t arena_idx);
+void print_arena_summary(uint8_t arena_idx);
+
 
 static inline void* phys_to_virt(uint64_t phys_addr) {
     return (void*)(phys_addr + get_hhdm_offset());

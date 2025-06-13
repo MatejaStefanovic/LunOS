@@ -1,6 +1,7 @@
 #include <kernel/idt_init.h>
 #include <kernel/pic.h>
 #include <kernel/isr_handler.h>
+#include <kernel/klogging.h>
 #include <string.h>
 
 struct idt_entry_t idt[IDT_SIZE];
@@ -19,6 +20,8 @@ void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector
 }
 
 void init_idt(){ 
+    kprintf("Initializing Interrupt table...\n");
+    
     idtr.limit = sizeof(idt)-1;
     idtr.base = (uint64_t)&idt;
    
@@ -61,4 +64,6 @@ void init_idt(){
     create_gate_entry(31, isr31, 0x28, 0x8E);
 
     setIdt(idtr.limit, idtr.base);
+
+    KSUCCESS("Interrupt setup was successfull\n");  
 }

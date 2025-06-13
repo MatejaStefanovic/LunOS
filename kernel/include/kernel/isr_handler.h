@@ -4,6 +4,8 @@
 #include <kernel/regs.h> 
 #include <stdint.h>
 
+#define KERNEL_SPACE_START 0xFFFF800000000000
+
 extern void isr0(void);
 extern void isr1(void);
 extern void isr2(void);
