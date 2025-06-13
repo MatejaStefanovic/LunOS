@@ -734,14 +734,12 @@ void test_concurrent_simulation(void) {
     #define ALLOCS_PER_THREAD 100
     
     void *thread_ptrs[SIM_THREADS][ALLOCS_PER_THREAD];
-    size_t thread_sizes[SIM_THREADS][ALLOCS_PER_THREAD];
     
     // Simulate interleaved allocations from different "threads"
     for (int round = 0; round < ALLOCS_PER_THREAD; round++) {
         for (int thread = 0; thread < SIM_THREADS; thread++) {
             size_t size = 16 + (thread * 32) + (round % 128);
             thread_ptrs[thread][round] = kmalloc(size);
-            thread_sizes[thread][round] = size;
             
             if (thread_ptrs[thread][round]) {
                 // Each "thread" writes its own pattern
