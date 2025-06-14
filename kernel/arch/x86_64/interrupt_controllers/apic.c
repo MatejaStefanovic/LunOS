@@ -1,5 +1,5 @@
 #include <kernel/apic.h>
-#include <kernel/pic.h>
+#include <kernel/timer.h>
 #include <kernel/vmm.h> 
 #include <kernel/klogging.h>
 #include <kernel/idt_init.h>
@@ -9,7 +9,7 @@ static uint32_t apic_timer_frequency = 0;
 static volatile uint64_t timer_ticks = 0;
 
 // For BSP use
-int apic_global_init(void) {
+int apic_global_init() {
     // Map APIC base - this only needs to be done once
     vaddr_t apic_vaddr = 0xFFFFFF8000000000UL;
     uint64_t mmio_flags = PTE_PRESENT | PTE_WRITABLE | PTE_CACHE_DISABLE | PTE_WRITETHROUGH; 
@@ -83,12 +83,13 @@ int apic_timer_init_cpu(uint32_t cpu_id) {
     return 0;
 }
 
-void apic_timer_register_handler(void) {
-    create_gate_entry(APIC_TIMER_VECTOR, (void *)apic_timer_handler, 0x08, 0x8E);
+extern void isr64(void);
+void apic_timer_register_handler() {
+    create_gate_entry(APIC_TIMER_VECTOR, isr64, 0x28, 0x8E);
 }
 
 // We use PIT to calibrate for better precision
-void apic_timer_calibrate(void) {
+void apic_timer_calibrate() {
     KSUCCESS("Calibrating APIC timer using PIT...\n");
     
     // Disable APIC timer during calibration
@@ -100,7 +101,7 @@ void apic_timer_calibrate(void) {
     // Set APIC timer to maximum count
     apic_write(APIC_TIMER_INITIAL, 0xFFFFFFFF);
     
-
+    cpu_wait_10ms(); 
     uint32_t apic_current = apic_read(APIC_TIMER_CURRENT);
     uint32_t apic_ticks_in_10ms = 0xFFFFFFFF - apic_current;
     
@@ -117,49 +118,68 @@ void apic_timer_calibrate(void) {
 
 
 void apic_timer_set_frequency(uint32_t frequency) {
+    KSUCCESS("Setting APIC timer frequency to %u Hz\n", frequency);
+    
     if (apic_timer_frequency == 0) {
         KERROR("APIC timer not calibrated\n");
         return;
     }
     
-    // Calculate initial count for desired frequency
+    if (frequency == 0) {
+        KERROR("Invalid frequency: 0\n");
+        return;
+    }
+    
     uint32_t initial_count = apic_timer_frequency / frequency;
     
-    // Set timer to periodic mode with our vector
-    apic_write(APIC_TIMER_LVT, APIC_TIMER_PERIODIC | APIC_TIMER_VECTOR);
+    if (initial_count == 0) {
+        KWARN("Frequency too high, setting to minimum\n");
+        initial_count = 1;
+    }
     
-    // Set divide by 16
+    KSUCCESS("Calculated initial count: %u\n", initial_count);
+    
+    // Check current APIC state before writing
+    uint32_t current_spurious = apic_read(APIC_SPURIOUS_VECTOR);
+    KSUCCESS("APIC spurious register: 0x%x (enabled: %s)\n", 
+             current_spurious, (current_spurious & 0x100) ? "yes" : "no");
+    
+    // Try writing registers one by one with debug output
+    KSUCCESS("Setting timer divide register...\n");
     apic_write(APIC_TIMER_DIVIDE, 0x3);
     
-    // Set initial count
+    KSUCCESS("Setting timer LVT register...\n");
+    apic_write(APIC_TIMER_LVT, APIC_TIMER_PERIODIC | APIC_TIMER_VECTOR);
+    
+    KSUCCESS("Setting initial count...\n");
     apic_write(APIC_TIMER_INITIAL, initial_count);
     
-    KSUCCESS("APIC timer set to %u Hz\n", frequency);
+    KSUCCESS("APIC timer set to %u Hz (initial count: %u)\n", frequency, initial_count);
 }
 
-void apic_timer_handler(void) {
+void apic_timer_handler() {
     timer_ticks++;
-    
+    kprintf("yo"); 
     apic_write(APIC_EOI, 0);
     
     // TODO: scheduler stuff like
     // schedule_sum_stuf();
 }
 
-void apic_timer_enable(void) {
+void apic_timer_enable() {
     uint32_t lvt = apic_read(APIC_TIMER_LVT);
     lvt &= ~0x10000; // Clear mask bit
     apic_write(APIC_TIMER_LVT, lvt);
 }
 
-void apic_timer_disable(void) {
+void apic_timer_disable() {
     uint32_t lvt = apic_read(APIC_TIMER_LVT);
     lvt |= 0x10000; // Set mask bit
     apic_write(APIC_TIMER_LVT, lvt);
 }
 
 // Get current tick count
-uint64_t apic_timer_get_ticks(void) {
+uint64_t apic_timer_get_ticks() {
     return timer_ticks;
 }
 

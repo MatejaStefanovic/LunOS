@@ -29,8 +29,6 @@
 #define APIC_TIMER_TSC_DEADLINE 0x00040000
 #define APIC_TIMER_VECTOR       0x40
 
-
-
 int apic_global_init(void);
 int apic_timer_init_cpu(uint32_t cpu_id);
 void apic_timer_register_handler(void);
@@ -40,9 +38,8 @@ void apic_timer_set_frequency(uint32_t frequency);
 
 void apic_timer_enable(void);
 void apic_timer_disable(void);
-
-uint64_t apic_timer_get_ticks(void);
 void apic_timer_handler(void);
+uint64_t apic_timer_get_ticks(void);
 
 // A little bit of fancy macro stuff
 #define apic_read(reg) (apic_base ? apic_base[(reg) >> 2] : 0)

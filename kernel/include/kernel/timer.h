@@ -4,5 +4,6 @@
 #include <stdint.h>
 
 void run_pit_tests(void);
+void cpu_wait_10ms(void);
 
 #endif
