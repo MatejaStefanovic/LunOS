@@ -62,8 +62,14 @@ void init_idt(){
     create_gate_entry(29, isr29, 0x28, 0x8E);
     create_gate_entry(30, isr30, 0x28, 0x8E);
     create_gate_entry(31, isr31, 0x28, 0x8E);
-
+    
     setIdt(idtr.limit, idtr.base);
 
     KSUCCESS("Interrupt setup was successfull\n");  
 }
+
+void reload_idt() {
+    setIdt(idtr.limit, idtr.base);
+    KSUCCESS("Interrupt table reloaded successfully\n");  
+}
+
