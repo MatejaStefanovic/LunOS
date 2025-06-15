@@ -137,21 +137,15 @@ void apic_timer_set_frequency(uint32_t frequency) {
         initial_count = 1;
     }
     
-    KSUCCESS("Calculated initial count: %u\n", initial_count);
-    
     // Check current APIC state before writing
     uint32_t current_spurious = apic_read(APIC_SPURIOUS_VECTOR);
     KSUCCESS("APIC spurious register: 0x%x (enabled: %s)\n", 
              current_spurious, (current_spurious & 0x100) ? "yes" : "no");
     
-    // Try writing registers one by one with debug output
-    KSUCCESS("Setting timer divide register...\n");
     apic_write(APIC_TIMER_DIVIDE, 0x3);
     
-    KSUCCESS("Setting timer LVT register...\n");
     apic_write(APIC_TIMER_LVT, APIC_TIMER_PERIODIC | APIC_TIMER_VECTOR);
     
-    KSUCCESS("Setting initial count...\n");
     apic_write(APIC_TIMER_INITIAL, initial_count);
     
     KSUCCESS("APIC timer set to %u Hz (initial count: %u)\n", frequency, initial_count);
@@ -181,42 +175,4 @@ void apic_timer_disable() {
 // Get current tick count
 uint64_t apic_timer_get_ticks() {
     return timer_ticks;
-}
-
-
-int apic_timer_test(uint32_t cpu_id) {
-    if (!apic_base) {
-        KERROR("APIC not initialized\n");
-        return -1;
-    }
-    
-    // Save current timer configuration
-    uint32_t old_lvt = apic_read(APIC_TIMER_LVT);
-    uint32_t old_initial = apic_read(APIC_TIMER_INITIAL);
-    uint32_t old_divide = apic_read(APIC_TIMER_DIVIDE);
-    
-    // Set up a short test timer (one-shot mode, masked)
-    apic_write(APIC_TIMER_LVT, 0x10000 | 0x20); // Masked, one-shot
-    apic_write(APIC_TIMER_DIVIDE, 0x3);          // Divide by 16
-    apic_write(APIC_TIMER_INITIAL, 1000);        // Small count
-    
-    // Wait a bit
-    for (volatile int i = 0; i < 10000; i++);
-    
-    // Check if timer counted down
-    uint32_t current = apic_read(APIC_TIMER_CURRENT);
-    bool timer_working = (current < 1000);
-    
-    // Restore old configuration
-    apic_write(APIC_TIMER_LVT, old_lvt);
-    apic_write(APIC_TIMER_INITIAL, old_initial);
-    apic_write(APIC_TIMER_DIVIDE, old_divide);
-    
-    if (timer_working) {
-        KSUCCESS("CPU %u: APIC timer test passed (counted down to %u)\n", cpu_id, current);
-        return 0;
-    } else {
-        KERROR("CPU %u: APIC timer test failed (still at %u)\n", cpu_id, current);
-        return -1;
-    }
 }
