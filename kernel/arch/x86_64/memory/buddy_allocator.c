@@ -95,7 +95,7 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
 }
 
 void populate_buddy_blocks(uint8_t arena_idx){
-struct buddy_arena *arena = &buddy_arenas[arena_idx];
+    struct buddy_arena *arena = &buddy_arenas[arena_idx];
     
     uint64_t current_addr = arena->base;
     uint64_t end_addr = arena->base + arena->length;
