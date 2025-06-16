@@ -52,14 +52,14 @@ static inline void atomic64_set(atomic64_t *v, long val){
 
 // Atomic add operations
 static inline void atomic_add(int val, atomic_t *v){
-    __asm__ __volatile__("lock addl %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "addl %1, %0"
                          : "+m" (v->value)
                          : "ir" (val)
                          : "memory");
 }
 
 static inline void atomic64_add(long val, atomic64_t *v){
-    __asm__ __volatile__("lock addq %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "addq %1, %0"
                          : "+m" (v->value)
                          : "er" (val)
                          : "memory");
@@ -67,14 +67,14 @@ static inline void atomic64_add(long val, atomic64_t *v){
 
 // Atomic subtract operations
 static inline void atomic_sub(int val, atomic_t *v){
-    __asm__ __volatile__("lock subl %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "subl %1, %0"
                          : "+m" (v->value)
                          : "ir" (val)
                          : "memory");
 }
 
 static inline void atomic64_sub(long val, atomic64_t *v){
-    __asm__ __volatile__("lock subq %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "subq %1, %0"
                          : "+m" (v->value)
                          : "er" (val)
                          : "memory");
@@ -82,28 +82,28 @@ static inline void atomic64_sub(long val, atomic64_t *v){
 
 // Atomic increment/decrement
 static inline void atomic_inc(atomic_t *v){
-    __asm__ __volatile__("lock incl %0"
+    __asm__ __volatile__(LOCK_PREFIX "incl %0"
                          : "+m" (v->value)
                          :
                          : "memory");
 }
 
 static inline void atomic64_inc(atomic64_t *v){
-    __asm__ __volatile__("lock incq %0"
+    __asm__ __volatile__(LOCK_PREFIX "incq %0"
                          : "+m" (v->value)
                          :
                          : "memory");
 }
 
 static inline void atomic_dec(atomic_t *v){
-    __asm__ __volatile__("lock decl %0"
+    __asm__ __volatile__(LOCK_PREFIX "decl %0"
                          : "+m" (v->value)
                          :
                          : "memory");
 }
 
 static inline void atomic64_dec(atomic64_t *v){
-    __asm__ __volatile__("lock decq %0"
+    __asm__ __volatile__(LOCK_PREFIX "decq %0"
                          : "+m" (v->value)
                          :
                          : "memory");
@@ -115,7 +115,7 @@ static inline void atomic64_dec(atomic64_t *v){
 // and that would break atomicity 
 static inline int atomic_add_return(int val, atomic_t *v){
     int result = val;
-    __asm__ __volatile__("lock xaddl %0, %1"
+    __asm__ __volatile__(LOCK_PREFIX "xaddl %0, %1"
                          : "+r" (result), "+m" (v->value)
                          :
                          : "memory");
@@ -125,7 +125,7 @@ static inline int atomic_add_return(int val, atomic_t *v){
 static inline long atomic64_add_return(long val, atomic64_t *v)
 {
     long result = val;
-    __asm__ __volatile__("lock xaddq %0, %1"
+    __asm__ __volatile__(LOCK_PREFIX "xaddq %0, %1"
                          : "+r" (result), "+m" (v->value)
                          :
                          : "memory");
@@ -167,7 +167,7 @@ static inline long atomic64_dec_return(atomic64_t *v)
 static inline int atomic_inc_and_test(atomic_t *v)
 {
     char result;
-    __asm__ __volatile__("lock incl %0; setz %1"
+    __asm__ __volatile__(LOCK_PREFIX "incl %0; setz %1"
                          : "+m" (v->value), "=qm" (result)
                          :
                          : "memory");
@@ -177,7 +177,7 @@ static inline int atomic_inc_and_test(atomic_t *v)
 static inline int atomic_dec_and_test(atomic_t *v)
 {
     char result;
-    __asm__ __volatile__("lock decl %0; setz %1"
+    __asm__ __volatile__(LOCK_PREFIX "decl %0; setz %1"
                          : "+m" (v->value), "=qm" (result)
                          :
                          : "memory");
@@ -187,7 +187,7 @@ static inline int atomic_dec_and_test(atomic_t *v)
 static inline int atomic_add_negative(int val, atomic_t *v)
 {
     char result;
-    __asm__ __volatile__("lock addl %2, %0; sets %1"
+    __asm__ __volatile__(LOCK_PREFIX "addl %2, %0; sets %1"
                          : "+m" (v->value), "=qm" (result)
                          : "ir" (val)
                          : "memory");
@@ -220,7 +220,7 @@ static inline long atomic64_xchg(atomic64_t *v, long new_val)
 static inline int atomic_cmpxchg(atomic_t *v, int old_val, int new_val)
 {
     int prev;
-    __asm__ __volatile__("lock cmpxchgl %1, %2"
+    __asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1, %2"
                          : "=a" (prev)
                          : "r" (new_val), "m" (v->value), "0" (old_val)
                          : "memory");
@@ -230,7 +230,7 @@ static inline int atomic_cmpxchg(atomic_t *v, int old_val, int new_val)
 static inline long atomic64_cmpxchg(atomic64_t *v, long old_val, long new_val)
 {
     long prev;
-    __asm__ __volatile__("lock cmpxchgq %1, %2"
+    __asm__ __volatile__(LOCK_PREFIX "cmpxchgq %1, %2"
                          : "=a" (prev)
                          : "r" (new_val), "m" (v->value), "0" (old_val)
                          : "memory");
@@ -242,7 +242,7 @@ static inline int atomic_try_cmpxchg(atomic_t *v, int *old_val, int new_val)
 {
     char success;
     int prev = *old_val;
-    __asm__ __volatile__("lock cmpxchgl %3, %1; setz %0"
+    __asm__ __volatile__(LOCK_PREFIX "cmpxchgl %3, %1; setz %0"
                          : "=a" (success), "+m" (v->value), "+a" (prev)
                          : "r" (new_val)
                          : "memory");
@@ -254,7 +254,7 @@ static inline int atomic64_try_cmpxchg(atomic64_t *v, long *old_val, long new_va
 {
     char success;
     long prev = *old_val;
-    __asm__ __volatile__("lock cmpxchgq %3, %1; setz %0"
+    __asm__ __volatile__(LOCK_PREFIX "cmpxchgq %3, %1; setz %0"
                          : "=a" (success), "+m" (v->value), "+a" (prev)
                          : "r" (new_val)
                          : "memory");
@@ -265,7 +265,7 @@ static inline int atomic64_try_cmpxchg(atomic64_t *v, long *old_val, long new_va
 // Bit operations
 static inline void atomic_set_bit(int bit, volatile unsigned long *addr)
 {
-    __asm__ __volatile__("lock btsq %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "btsq %1, %0"
                          : "+m" (*addr)
                          : "Ir" (bit)
                          : "memory");
@@ -273,7 +273,7 @@ static inline void atomic_set_bit(int bit, volatile unsigned long *addr)
 
 static inline void atomic_clear_bit(int bit, volatile unsigned long *addr)
 {
-    __asm__ __volatile__("lock btrq %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "btrq %1, %0"
                          : "+m" (*addr)
                          : "Ir" (bit)
                          : "memory");
@@ -281,7 +281,7 @@ static inline void atomic_clear_bit(int bit, volatile unsigned long *addr)
 
 static inline void atomic_change_bit(int bit, volatile unsigned long *addr)
 {
-    __asm__ __volatile__("lock btcq %1, %0"
+    __asm__ __volatile__(LOCK_PREFIX "btcq %1, %0"
                          : "+m" (*addr)
                          : "Ir" (bit)
                          : "memory");
@@ -290,7 +290,7 @@ static inline void atomic_change_bit(int bit, volatile unsigned long *addr)
 static inline int atomic_test_and_set_bit(int bit, volatile unsigned long *addr)
 {
     char old_bit;
-    __asm__ __volatile__("lock btsq %2, %0; setc %1"
+    __asm__ __volatile__(LOCK_PREFIX "btsq %2, %0; setc %1"
                          : "+m" (*addr), "=qm" (old_bit)
                          : "Ir" (bit)
                          : "memory");
@@ -300,7 +300,7 @@ static inline int atomic_test_and_set_bit(int bit, volatile unsigned long *addr)
 static inline int atomic_test_and_clear_bit(int bit, volatile unsigned long *addr)
 {
     char old_bit;
-    __asm__ __volatile__("lock btrq %2, %0; setc %1"
+    __asm__ __volatile__(LOCK_PREFIX "btrq %2, %0; setc %1"
                          : "+m" (*addr), "=qm" (old_bit)
                          : "Ir" (bit)
                          : "memory");
@@ -310,7 +310,7 @@ static inline int atomic_test_and_clear_bit(int bit, volatile unsigned long *add
 static inline int atomic_test_and_change_bit(int bit, volatile unsigned long *addr)
 {
     char old_bit;
-    __asm__ __volatile__("lock btcq %2, %0; setc %1"
+    __asm__ __volatile__(LOCK_PREFIX "btcq %2, %0; setc %1"
                          : "+m" (*addr), "=qm" (old_bit)
                          : "Ir" (bit)
                          : "memory");
