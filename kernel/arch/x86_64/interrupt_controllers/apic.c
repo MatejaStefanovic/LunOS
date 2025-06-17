@@ -37,14 +37,9 @@ int apic_timer_init_cpu(uint32_t cpu_id) {
         KERROR("APIC not globally initialized\n");
         return -1;
     }
-    
-    // Read APIC ID to verify we can access APIC registers
-    uint32_t apic_id = apic_read(APIC_ID) >> 24;
-    kprintf("CPU %u: APIC ID = %u\n", cpu_id, apic_id);
-    
+     
     // APIC might already be enabled so we check that 
     uint32_t spurious = apic_read(APIC_SPURIOUS_VECTOR);
-    bool was_enabled = (spurious & 0x100) != 0;
     
     spurious |= 0x100; // Enable APIC
     spurious &= ~0xFF;  // Clear spurious vector bits
@@ -77,8 +72,6 @@ int apic_timer_init_cpu(uint32_t cpu_id) {
     // Send EOI to clear any pending interrupts
     apic_write(APIC_EOI, 0);
     
-    KSUCCESS("CPU %u: APIC enabled and verified (was %s)\n", 
-             cpu_id, was_enabled ? "already enabled" : "disabled");
     
     return 0;
 }
@@ -118,8 +111,6 @@ void apic_timer_calibrate() {
 
 
 void apic_timer_set_frequency(uint32_t frequency) {
-    KSUCCESS("Setting APIC timer frequency to %u Hz\n", frequency);
-    
     if (apic_timer_frequency == 0) {
         KERROR("APIC timer not calibrated\n");
         return;
@@ -137,10 +128,6 @@ void apic_timer_set_frequency(uint32_t frequency) {
         initial_count = 1;
     }
     
-    // Check current APIC state before writing
-    uint32_t current_spurious = apic_read(APIC_SPURIOUS_VECTOR);
-    KSUCCESS("APIC spurious register: 0x%x (enabled: %s)\n", 
-             current_spurious, (current_spurious & 0x100) ? "yes" : "no");
     
     apic_write(APIC_TIMER_DIVIDE, 0x3);
     
@@ -148,12 +135,10 @@ void apic_timer_set_frequency(uint32_t frequency) {
     
     apic_write(APIC_TIMER_INITIAL, initial_count);
     
-    KSUCCESS("APIC timer set to %u Hz (initial count: %u)\n", frequency, initial_count);
 }
 
 void apic_timer_handler() {
     timer_ticks++;
-    kprintf("yo"); 
     apic_write(APIC_EOI, 0);
     
     // TODO: scheduler stuff like

@@ -147,7 +147,7 @@ void calibrate_cpu_timing(void) {
         return;
     }
     
-    kprintf("CPUID frequency detection failed, trying RTC...\n");
+    KWARN("CPUID frequency detection failed, trying RTC...\n");
     
     // Try RTC calibration
     calibrate_with_rtc();
@@ -157,7 +157,7 @@ void calibrate_cpu_timing(void) {
             kprintf("RTC calibration seems wrong: %lu cycles\n", cpu_cycles_per_10ms);
             cpu_cycles_per_10ms = 0;
         } else {
-            kprintf("RTC calibration successful\n");
+            KSUCCESS("RTC calibration successful\n");
             return;
         }
     }

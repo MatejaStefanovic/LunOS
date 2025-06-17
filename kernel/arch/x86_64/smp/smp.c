@@ -13,6 +13,8 @@ void ap_entry_point(struct limine_smp_info *cpu_info) {
         hcf();
     }
     
+    apic_timer_set_frequency(100);
+    apic_timer_enable();
     asm volatile ("sti");
     KSUCCESS("CPU %u online with verified APIC timer\n", cpu_info->lapic_id);
     

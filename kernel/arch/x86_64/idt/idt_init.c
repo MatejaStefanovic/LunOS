@@ -70,6 +70,5 @@ void init_idt(){
 
 void reload_idt() {
     setIdt(idtr.limit, idtr.base);
-    KSUCCESS("Interrupt table reloaded successfully\n");  
 }
 

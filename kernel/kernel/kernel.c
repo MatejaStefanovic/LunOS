@@ -44,7 +44,7 @@ void _start() {
     apic_timer_init_cpu(0); // BSP has id 0 
     apic_timer_set_frequency(100);
     apic_timer_enable();
-    //smp_init();
+    smp_init();
     hcf();
 }
 
