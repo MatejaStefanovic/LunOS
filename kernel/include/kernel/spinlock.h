@@ -151,7 +151,7 @@ static inline int rwlock_read_trylock(rwlock_t *lock){
 }
 
 static inline void rwlock_read_unlock(rwlock_t *lock){
-    atomic_add(-1, &lock->lock);
+    atomic_dec(&lock->lock);
 }
 
 static inline void rwlock_write_lock(rwlock_t *lock){

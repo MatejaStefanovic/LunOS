@@ -36,7 +36,6 @@ void _start() {
     else
         KSUCCESS("Virtual memory manager initialized properly\n");
    
-    //run_pit_tests();
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();

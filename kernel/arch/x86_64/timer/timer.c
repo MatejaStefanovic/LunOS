@@ -162,7 +162,7 @@ void calibrate_cpu_timing(void) {
         }
     }
     
-    kprintf("RTC calibration failed, using known frequency estimate...\n");
+    KWARN("RTC calibration failed, using known frequency estimate...\n");
     calibrate_with_known_frequencies();
 }
 
