@@ -3,10 +3,11 @@
 #include <kernel/vmm.h> 
 #include <kernel/klogging.h>
 #include <kernel/idt_init.h>
+#include <kernel/smp.h>
 
 volatile uint32_t *apic_base = NULL;
 static uint32_t apic_timer_frequency = 0;
-static volatile uint64_t timer_ticks = 0;
+DEFINE_PER_CPU_VOLATILE(uint64_t, timer_ticks);
 
 // For BSP use
 int apic_global_init() {
@@ -138,7 +139,10 @@ void apic_timer_set_frequency(uint32_t frequency) {
 }
 
 void apic_timer_handler() {
-    timer_ticks++;
+    if(get_current_core_id() != 2)
+        kprintf("CORE: %d\n", get_current_core_id());
+    else
+        kprintf("YOLOO\n");
     apic_write(APIC_EOI, 0);
     
     // TODO: scheduler stuff like
@@ -159,5 +163,5 @@ void apic_timer_disable() {
 
 // Get current tick count
 uint64_t apic_timer_get_ticks() {
-    return timer_ticks;
+    return this_core_read(timer_ticks);
 }

@@ -182,7 +182,6 @@ void kprintf(const char* restrict format, ...){
         
         return;
     }
-    
     int_flags_t flags;
     spinlock_lock_intsave(&kprint_lock, &flags);
     terminal_write(buf, out_len);

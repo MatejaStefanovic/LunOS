@@ -3,7 +3,21 @@
 
 #include <kernel/limine_requests.h>
 
+#define MAX_CORES 8
+
+#define DEFINE_PER_CPU(type, name) \
+    static type __percpu_##name[MAX_CORES]
+
+#define DEFINE_PER_CPU_VOLATILE(type, name) \
+    static volatile type __percpu_##name[MAX_CORES]
+
+#define this_core_read(var) \
+    (__percpu_##var[get_current_core_id()])
+
+#define this_core_write(var, value) \
+    (__percpu_##var[get_current_core_id()] = (value))
+
 void smp_init(void);
-void ap_entry_point(struct limine_smp_info *cpu_info);
+uint32_t get_current_core_id(void);
 
 #endif

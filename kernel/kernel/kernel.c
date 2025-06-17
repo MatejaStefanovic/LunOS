@@ -39,10 +39,7 @@ void _start() {
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();
-     
-    apic_timer_init_cpu(0); // BSP has id 0 
-    apic_timer_set_frequency(100);
-    apic_timer_enable();
+         
     smp_init();
     hcf();
 }
