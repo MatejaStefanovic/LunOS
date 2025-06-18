@@ -1,8 +1,8 @@
 #include <kernel/memmgr.h>
 #include <kernel/pmm.h>
 
-int mm_add_region(struct mem_descriptor *mm, vaddr_t start, 
-        vaddr_t end, uint64_t flags){
+int mm_add_region(struct mem_descriptor *mm, virt_addr start, 
+        virt_addr end, uint64_t flags){
 
     if(!mm || start >= end){
         KERROR("NULL task mem descriptor or start addr is bigger than end addr\n");
@@ -20,7 +20,7 @@ int mm_add_region(struct mem_descriptor *mm, vaddr_t start,
     return 0;
 }
 
-int mm_remove_region(struct mem_descriptor *mm, vaddr_t start, vaddr_t end){
+int mm_remove_region(struct mem_descriptor *mm, virt_addr start, virt_addr end){
     if(!mm || start >= end){
     KERROR("NULL task mem descriptor or start addr is bigger than end addr\n");
         return -1;
@@ -40,7 +40,7 @@ int mm_remove_region(struct mem_descriptor *mm, vaddr_t start, vaddr_t end){
     return -1;
 }
 
-struct mem_region *mm_find_region(struct mem_descriptor *mm, vaddr_t vaddr){
+struct mem_region *mm_find_region(struct mem_descriptor *mm, virt_addr vaddr){
     if(!mm){
         KERROR("Task mem descriptor provided is NULL\n");
         return NULL;
@@ -96,17 +96,17 @@ void mm_free(struct mem_descriptor *mm){
 }
 
 int mm_setup_executable(struct mem_descriptor *mm, 
-                       vaddr_t code_start, vaddr_t code_end, vaddr_t data_end) {
+                       virt_addr code_start, virt_addr code_end, virt_addr data_end) {
     mm_add_region(mm, code_start, code_end, RP_READ | RP_EXEC);
     
-    vaddr_t data_start = (code_end + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+    virt_addr data_start = (code_end + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
     mm_add_region(mm, data_start, data_end, RP_READ | RP_WRITE);
     
     mm->brk = data_end + PAGE_SIZE;
 
-    vaddr_t stack_top = STACK_TOP;
-    vaddr_t stack_bottom = stack_top - STACK_SIZE + 1;
-    vaddr_t guard_stack = stack_bottom - GUARD_SIZE;
+    virt_addr stack_top = STACK_TOP;
+    virt_addr stack_bottom = stack_top - STACK_SIZE + 1;
+    virt_addr guard_stack = stack_bottom - GUARD_SIZE;
     
     mm_add_region(mm, guard_stack, stack_bottom - 1, 0);
     mm_add_region(mm, stack_bottom, stack_top, RP_READ | RP_WRITE | RP_STACK);
@@ -114,7 +114,7 @@ int mm_setup_executable(struct mem_descriptor *mm,
     return 0;
 }
 
-bool mm_check_access(struct mem_descriptor *mm, vaddr_t addr, uint64_t access_flags) {
+bool mm_check_access(struct mem_descriptor *mm, virt_addr addr, uint64_t access_flags) {
     struct mem_region *region = mm_find_region(mm, addr);
     if (!region) 
         return false; 
@@ -128,8 +128,8 @@ bool mm_check_access(struct mem_descriptor *mm, vaddr_t addr, uint64_t access_fl
     return (region->flags & access_flags) == access_flags;
 }
 
-int mm_expand_stack(struct mem_descriptor *mm, vaddr_t fault_addr) {
-    paddr_t phys_page = pmm_alloc_page();
+int mm_expand_stack(struct mem_descriptor *mm, virt_addr fault_addr) {
+    phys_addr phys_page = pmm_alloc_page();
     if (phys_page == 0) {
         return -1; 
     }
@@ -140,10 +140,10 @@ int mm_expand_stack(struct mem_descriptor *mm, vaddr_t fault_addr) {
 }
 
 
-int mm_expand_heap(struct mem_descriptor *mm, vaddr_t fault_addr) {
-    vaddr_t grow_start = mm->brk;
+int mm_expand_heap(struct mem_descriptor *mm, virt_addr fault_addr) {
+    virt_addr grow_start = mm->brk;
     
-    paddr_t phys_start = buddy_alloc_pages(HEAP_GROW_ORDER);
+    phys_addr phys_start = buddy_alloc_pages(HEAP_GROW_ORDER);
     if (phys_start == 0) {
         return -1;
     }

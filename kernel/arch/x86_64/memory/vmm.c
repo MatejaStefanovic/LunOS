@@ -2,22 +2,22 @@
 #include <kernel/pmm.h>
 #include <string.h>
 
-static struct page_table_t* current_pml4 = NULL;
+static struct page_table* current_pml4 = NULL;
 static uint64_t hhdm_offset;
 
 struct addr_space *kernel_as = NULL;
 
-static struct page_table_t* get_current_pml4(){
+static struct page_table* get_current_pml4(){
     if(!current_pml4){
-        paddr_t cr3 = get_cr3();
+        phys_addr cr3 = get_cr3();
         // We need to see where out higher half direct mapping starts and we 
         // get that info from limine
-        current_pml4 = (struct page_table_t*)(cr3 + hhdm_offset);
+        current_pml4 = (struct page_table*)(cr3 + hhdm_offset);
     }
     return current_pml4; 
 }
 
-void vmm_free_page_table(struct page_table_t *pt){ 
+void vmm_free_page_table(struct page_table *pt){ 
     if(!pt){
         KERROR("Tried to free a NULL ptr\n");
         return;
@@ -26,13 +26,13 @@ void vmm_free_page_table(struct page_table_t *pt){
     pmm_free_page(phys);
 }
 
-static void free_pd_table(paddr_t pd_phys) {
-    struct page_table_t *pd = (struct page_table_t*)(pd_phys + hhdm_offset);
+static void free_pd_table(phys_addr pd_phys) {
+    struct page_table *pd = (struct page_table*)(pd_phys + hhdm_offset);
     
     for (int i = 0; i < 512; i++) {
         if (pd->entries[i] & PTE_PRESENT) {
-            paddr_t pt_phys = PTE_ADDR(pd->entries[i]);
-            struct page_table_t *pt = (struct page_table_t*)(pt_phys + hhdm_offset);
+            phys_addr pt_phys = PTE_ADDR(pd->entries[i]);
+            struct page_table *pt = (struct page_table*)(pt_phys + hhdm_offset);
             vmm_free_page_table(pt);  
         }
     }
@@ -40,8 +40,8 @@ static void free_pd_table(paddr_t pd_phys) {
     vmm_free_page_table(pd);
 }
 
-static void free_pdp_table(paddr_t pdp_phys) {
-    struct page_table_t *pdp = (struct page_table_t*)(pdp_phys + hhdm_offset);
+static void free_pdp_table(phys_addr pdp_phys) {
+    struct page_table *pdp = (struct page_table*)(pdp_phys + hhdm_offset);
     
     for (int i = 0; i < 512; i++) {
         if (pdp->entries[i] & PTE_PRESENT) {
@@ -125,27 +125,27 @@ void vmm_switch_address_space(struct addr_space* as) {
         KERROR("Cannot switch to a NULL address space\n");
         return;
     }
-    paddr_t pml4_phys = (paddr_t)as->pml4 - hhdm_offset;
+    phys_addr pml4_phys = (phys_addr)as->pml4 - hhdm_offset;
     set_cr3(pml4_phys);
 }
 
-struct page_table_t* vmm_alloc_page_table(void){
-    paddr_t phys = pmm_alloc_page();
+struct page_table* vmm_alloc_page_table(void){
+    phys_addr phys = pmm_alloc_page();
     if(phys == 0)
         return NULL;
     
-    struct page_table_t *pt = (struct page_table_t*)(phys + hhdm_offset);
+    struct page_table *pt = (struct page_table*)(phys + hhdm_offset);
     memset(pt, 0, PAGE_SIZE);
 
     return pt;
 }
 
 
-pte_t* vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create) {
+page_table_entry* vmm_walk_page_table(struct addr_space *as, virt_addr vaddr, bool create) {
     if(!as || !as->pml4)
         return NULL;
 
-    struct page_table_t* current = as->pml4;
+    struct page_table* current = as->pml4;
     
     // Walk through PML4 -> PDP -> PD -> PT
     uint32_t indices[] = {
@@ -157,7 +157,7 @@ pte_t* vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create) {
     
     for (int level = 0; level < 4; ++level) {
         uint32_t idx = indices[level];
-        pte_t* entry = &current->entries[idx];
+        page_table_entry* entry = &current->entries[idx];
         
         if (level == 3) {
             // Last level - return pointer to PTE
@@ -168,26 +168,26 @@ pte_t* vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create) {
             if (!create) 
                 return NULL;
             
-            struct page_table_t* new_pt = vmm_alloc_page_table();
+            struct page_table* new_pt = vmm_alloc_page_table();
             if (!new_pt) 
                 return NULL;
             
             // We only ever map user space programs as kernel uses HHDM
             // hence why we always add PTE_USER
-            paddr_t phys = (paddr_t)new_pt - hhdm_offset;
+            phys_addr phys = (phys_addr)new_pt - hhdm_offset;
             *entry = phys | PTE_PRESENT | PTE_WRITABLE | PTE_USER;    
         }
         
         // Move to next level
-        paddr_t next_phys = PTE_ADDR(*entry);
-        current = (struct page_table_t*)(next_phys + hhdm_offset);
+        phys_addr next_phys = PTE_ADDR(*entry);
+        current = (struct page_table*)(next_phys + hhdm_offset);
     }
     
     return NULL; 
 }
 
-static int _vmm_map_page_no_flush(struct addr_space *as, vaddr_t vaddr, 
-        paddr_t paddr, uint64_t flags){
+static int _vmm_map_page_no_flush(struct addr_space *as, virt_addr vaddr, 
+        phys_addr paddr, uint64_t flags){
 
     if(!as){
         KERROR("Cannot map page, virtual adress space is NULL\n");
@@ -197,7 +197,7 @@ static int _vmm_map_page_no_flush(struct addr_space *as, vaddr_t vaddr,
     vaddr = vmm_page_align_down(vaddr); 
     paddr = vmm_page_align_down(paddr);
 
-    pte_t *pte = vmm_walk_page_table(as, vaddr, true);
+    page_table_entry *pte = vmm_walk_page_table(as, vaddr, true);
     
     if(!pte){
         KERROR("Cannot map page, page table entry is NULL\n");
@@ -215,8 +215,8 @@ static int _vmm_map_page_no_flush(struct addr_space *as, vaddr_t vaddr,
     return 0;
 }
 
-int vmm_map_page(struct addr_space *as, vaddr_t vaddr, 
-        paddr_t paddr, uint64_t flags){
+int vmm_map_page(struct addr_space *as, virt_addr vaddr, 
+        phys_addr paddr, uint64_t flags){
 
     if(!as){
         KERROR("Cannot map page, virtual adress space is NULL\n");
@@ -226,7 +226,7 @@ int vmm_map_page(struct addr_space *as, vaddr_t vaddr,
     vaddr = vmm_page_align_down(vaddr); 
     paddr = vmm_page_align_down(paddr);
 
-    pte_t *pte = vmm_walk_page_table(as, vaddr, true);
+    page_table_entry *pte = vmm_walk_page_table(as, vaddr, true);
     
     if(!pte){
         KERROR("Cannot map page, page table entry is NULL\n");
@@ -245,8 +245,8 @@ int vmm_map_page(struct addr_space *as, vaddr_t vaddr,
     return 0;
 }
 
-int vmm_map_range(struct addr_space *as, vaddr_t vaddr, 
-        paddr_t paddr, size_t size, uint64_t flags) {
+int vmm_map_range(struct addr_space *as, virt_addr vaddr, 
+        phys_addr paddr, size_t size, uint64_t flags) {
     
     if(!as){
         KERROR("Cannot map pages, virtual adress space is NULL\n");
@@ -258,11 +258,11 @@ int vmm_map_range(struct addr_space *as, vaddr_t vaddr,
         return -1;
     }
     
-    vaddr_t vstart = vmm_page_align_down(vaddr);
-    vaddr_t vend = vmm_page_align_up(vaddr + size);
-    paddr_t pstart = vmm_page_align_down(paddr);
+    virt_addr vstart = vmm_page_align_down(vaddr);
+    virt_addr vend = vmm_page_align_up(vaddr + size);
+    phys_addr pstart = vmm_page_align_down(paddr);
 
-    for (vaddr_t v = vstart, p = pstart; v < vend; v += PAGE_SIZE, p += PAGE_SIZE) {
+    for (virt_addr v = vstart, p = pstart; v < vend; v += PAGE_SIZE, p += PAGE_SIZE) {
     if (_vmm_map_page_no_flush(as, v, p, flags) != 0) {
             // Rollback on failure
             vmm_unmap_range(as, vstart, v - vstart);
@@ -273,12 +273,12 @@ int vmm_map_range(struct addr_space *as, vaddr_t vaddr,
     return 0;
 }
 
-static int _vmm_unmap_page_no_flush(struct addr_space* as, vaddr_t vaddr) {
+static int _vmm_unmap_page_no_flush(struct addr_space* as, virt_addr vaddr) {
     if (!as) return -1;
     
     vaddr = vmm_page_align_down(vaddr);
     
-    pte_t* pte = vmm_walk_page_table(as, vaddr, false);
+    page_table_entry* pte = vmm_walk_page_table(as, vaddr, false);
     if (!pte || !(*pte & PTE_PRESENT)) {
         return -1; // Not mapped
     }
@@ -290,12 +290,12 @@ static int _vmm_unmap_page_no_flush(struct addr_space* as, vaddr_t vaddr) {
     return 0;
 }
 
-int vmm_unmap_page(struct addr_space *as, vaddr_t vaddr) {
+int vmm_unmap_page(struct addr_space *as, virt_addr vaddr) {
     if (!as) return -1;
     
     vaddr = vmm_page_align_down(vaddr);
     
-    pte_t* pte = vmm_walk_page_table(as, vaddr, false);
+    page_table_entry* pte = vmm_walk_page_table(as, vaddr, false);
     if (!pte || !(*pte & PTE_PRESENT)) {
         return -1; // Not mapped
     }
@@ -308,24 +308,24 @@ int vmm_unmap_page(struct addr_space *as, vaddr_t vaddr) {
     return 0;
 }
 
-int vmm_unmap_range(struct addr_space *as, vaddr_t vaddr, size_t size) {
+int vmm_unmap_range(struct addr_space *as, virt_addr vaddr, size_t size) {
     if (!as || size == 0) return -1;
     
-    vaddr_t vstart = vmm_page_align_down(vaddr);
-    vaddr_t vend = vmm_page_align_up(vaddr + size);
+    virt_addr vstart = vmm_page_align_down(vaddr);
+    virt_addr vend = vmm_page_align_up(vaddr + size);
     
-    for (vaddr_t v = vstart; v < vend; v += PAGE_SIZE) {
+    for (virt_addr v = vstart; v < vend; v += PAGE_SIZE) {
         _vmm_unmap_page_no_flush(as, v);
     }
     vmm_flush_tlb(); 
     return 0;
 }
 
-paddr_t vmm_virt_to_phys(struct addr_space *as, vaddr_t vaddr) {
+phys_addr vmm_virt_to_phys(struct addr_space *as, virt_addr vaddr) {
     if(!as)
         return 0;
 
-    pte_t* pte = vmm_walk_page_table(as, vaddr, false);
+    page_table_entry* pte = vmm_walk_page_table(as, vaddr, false);
     if (!pte || !(*pte & PTE_PRESENT)) {
         return 0;
     }
@@ -333,7 +333,7 @@ paddr_t vmm_virt_to_phys(struct addr_space *as, vaddr_t vaddr) {
     return PTE_ADDR(*pte) | PAGE_OFFSET(vaddr);
 }
 
-bool vmm_is_mapped(struct addr_space *as, vaddr_t vaddr) {
+bool vmm_is_mapped(struct addr_space *as, virt_addr vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
 }
 

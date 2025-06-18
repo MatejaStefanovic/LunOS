@@ -12,7 +12,7 @@ DEFINE_PER_CPU_VOLATILE(uint64_t, timer_ticks);
 // For BSP use
 int apic_global_init() {
     // Map APIC base - this only needs to be done once
-    vaddr_t apic_vaddr = 0xFFFFFF8000000000UL;
+    virt_addr apic_vaddr = 0xFFFFFF8000000000UL;
     uint64_t mmio_flags = PTE_PRESENT | PTE_WRITABLE | PTE_CACHE_DISABLE | PTE_WRITETHROUGH; 
     
     struct addr_space *kernel_as = get_kernel_as();

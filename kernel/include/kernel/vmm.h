@@ -32,13 +32,13 @@
 #define PTE_ADDR(pte) ((pte) & 0x000FFFFFFFFFF000UL)
 
 
-struct page_table_t {
-    pte_t entries[512];
+struct page_table {
+    page_table_entry entries[512];
 } __attribute__((aligned(PAGE_SIZE)));
 
 
 struct addr_space{
-    struct page_table_t *pml4;
+    struct page_table *pml4;
     uint64_t total_pages;
     uint64_t flags;
 };
@@ -47,37 +47,37 @@ int vmm_init(void);
 struct addr_space *vmm_create_address_space(void);
 void vmm_destroy_address_space(struct addr_space *as);
 
-struct page_table_t *vmm_alloc_page_table(void);
-void vmm_free_page_table(struct page_table_t *pt);
-pte_t *vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create);
+struct page_table *vmm_alloc_page_table(void);
+void vmm_free_page_table(struct page_table *pt);
+page_table_entry *vmm_walk_page_table(struct addr_space *as, virt_addr vaddr, bool create);
 
 
-int vmm_map_page(struct addr_space *as,vaddr_t vaddr, paddr_t paddr, uint64_t flags);
-int vmm_unmap_page(struct addr_space *as, vaddr_t vaddr);
-int vmm_map_range(struct addr_space *as, vaddr_t vaddr, 
-        paddr_t paddr, uint64_t size, uint64_t flags);
-int vmm_unmap_range(struct addr_space *as, vaddr_t vaddr, uint64_t size);
+int vmm_map_page(struct addr_space *as,virt_addr vaddr, phys_addr paddr, uint64_t flags);
+int vmm_unmap_page(struct addr_space *as, virt_addr vaddr);
+int vmm_map_range(struct addr_space *as, virt_addr vaddr, 
+        phys_addr paddr, uint64_t size, uint64_t flags);
+int vmm_unmap_range(struct addr_space *as, virt_addr vaddr, uint64_t size);
 
 
 // Address translation
-paddr_t vmm_virt_to_phys(struct addr_space *as, vaddr_t vaddr);
-bool vmm_is_mapped(struct addr_space *as, vaddr_t vaddr);
+phys_addr vmm_virt_to_phys(struct addr_space *as, virt_addr vaddr);
+bool vmm_is_mapped(struct addr_space *as, virt_addr vaddr);
 void vmm_switch_address_space(struct addr_space* as);
 
-int vmm_handle_page_fault(struct addr_space* as, vaddr_t fault_addr, 
+int vmm_handle_page_fault(struct addr_space* as, virt_addr fault_addr, 
                             uint64_t error_code);
 
 struct addr_space *get_kernel_as(void);
 
-static inline vaddr_t vmm_page_align_up(vaddr_t vaddr){
+static inline virt_addr vmm_page_align_up(virt_addr vaddr){
     return (vaddr + PAGE_SIZE - 1) & PAGE_MASK;
 }
 
-static inline vaddr_t vmm_page_align_down(vaddr_t vaddr){
+static inline virt_addr vmm_page_align_down(virt_addr vaddr){
     return vaddr & PAGE_MASK;
 }
 
-static inline size_t vmm_pages_in_range(vaddr_t start, vaddr_t end){
+static inline size_t vmm_pages_in_range(virt_addr start, virt_addr end){
     return (vmm_page_align_up(end) - vmm_page_align_down(start)) / PAGE_SIZE;
 }
 
@@ -86,7 +86,7 @@ static inline void vmm_flush_tlb(void) {
     __asm__ volatile("mov %%cr3, %%rax; mov %%rax, %%cr3" ::: "rax", "memory");
 }
 
-static inline void vmm_flush_tlb_single(vaddr_t vaddr) {
+static inline void vmm_flush_tlb_single(virt_addr vaddr) {
     __asm__ volatile("invlpg (%0)" :: "r"(vaddr) : "memory");
 }
 

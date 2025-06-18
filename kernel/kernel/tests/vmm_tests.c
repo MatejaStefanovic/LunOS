@@ -18,8 +18,8 @@ int test_vmm_basic() {
     KSUCCESS("PML4 allocated at virtual: %p\n", test_as.pml4);
     
     // Test 1: Map a single page
-    vaddr_t test_vaddr = 0x400000;  // 4MB virtual address
-    paddr_t test_paddr = pmm_alloc_page();
+    virt_addr test_vaddr = 0x400000;  // 4MB virtual address
+    phys_addr test_paddr = pmm_alloc_page();
     
     if (test_paddr == 0) {
         KERROR("FAIL: Could not allocate physical page\n");
@@ -43,7 +43,7 @@ int test_vmm_basic() {
     KSUCCESS("Mapping verified\n");
     
     // Test 3: Test virtual to physical translation
-    paddr_t resolved_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
+    phys_addr resolved_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
     if (resolved_paddr != test_paddr) {
         KERROR("FAIL: Translation mismatch. Expected: 0x%lx, Got: 0x%lx\n", 
                 test_paddr, resolved_paddr);
@@ -52,7 +52,7 @@ int test_vmm_basic() {
     KSUCCESS("Virtual to physical translation correct\n");
     
     // Test 4: Test page walk function directly
-    pte_t* pte = vmm_walk_page_table(&test_as, test_vaddr, false);
+    page_table_entry* pte = vmm_walk_page_table(&test_as, test_vaddr, false);
     if (!pte) {
         KERROR("FAIL: vmm_walk_page_table returned NULL\n");
         return -1;
@@ -64,9 +64,9 @@ int test_vmm_basic() {
     KSUCCESS("Page walk function working\n");
     
     // Test 5: Test with offset within page
-    vaddr_t offset_vaddr = test_vaddr + 0x123;  // Add some offset
-    paddr_t offset_paddr = vmm_virt_to_phys(&test_as, offset_vaddr);
-    paddr_t expected_offset_paddr = test_paddr + 0x123;
+    virt_addr offset_vaddr = test_vaddr + 0x123;  // Add some offset
+    phys_addr offset_paddr = vmm_virt_to_phys(&test_as, offset_vaddr);
+    phys_addr expected_offset_paddr = test_paddr + 0x123;
     
     if (offset_paddr != expected_offset_paddr) {
         KERROR("FAIL: Offset translation wrong. Expected: 0x%lx, Got: 0x%lx\n",
@@ -94,10 +94,10 @@ int test_vmm_range() {
     
     // Allocate contiguous physical pages
     size_t num_pages = 4;
-    paddr_t base_paddr = pmm_alloc_page();
+    phys_addr base_paddr = pmm_alloc_page();
     
     
-    vaddr_t base_vaddr = 0x800000;  // 8MB
+    virt_addr base_vaddr = 0x800000;  // 8MB
     size_t total_size = num_pages * PAGE_SIZE;
     
     int result = vmm_map_range(&test_as, base_vaddr, base_paddr, total_size, 
@@ -111,7 +111,7 @@ int test_vmm_range() {
     
     // Verify all pages in range are mapped
     for (size_t i = 0; i < num_pages; i++) {
-        vaddr_t check_vaddr = base_vaddr + (i * PAGE_SIZE);
+        virt_addr check_vaddr = base_vaddr + (i * PAGE_SIZE);
         if (!vmm_is_mapped(&test_as, check_vaddr)) {
             KERROR("FAIL: Page %lu not mapped at 0x%lx\n", i, check_vaddr);
             return -1;
@@ -137,8 +137,8 @@ int test_vmm_unmap() {
     }
     
     // Test 1: Single page unmap
-    vaddr_t test_vaddr = 0x500000;
-    paddr_t test_paddr = pmm_alloc_page();
+    virt_addr test_vaddr = 0x500000;
+    phys_addr test_paddr = pmm_alloc_page();
     
     if (test_paddr == 0) {
         KERROR("FAIL: Could not allocate physical page\n");
@@ -173,13 +173,13 @@ int test_vmm_unmap() {
     
     // Test 2: Range unmap
     size_t num_pages = 5;
-    vaddr_t base_vaddr = 0x600000;
+    virt_addr base_vaddr = 0x600000;
     size_t total_size = num_pages * PAGE_SIZE;
     
     // Map multiple pages
     for (size_t i = 0; i < num_pages; i++) {
-        vaddr_t vaddr = base_vaddr + (i * PAGE_SIZE);
-        paddr_t paddr = pmm_alloc_page();
+        virt_addr vaddr = base_vaddr + (i * PAGE_SIZE);
+        phys_addr paddr = pmm_alloc_page();
         
         if (paddr == 0) {
             KERROR("FAIL: Could not allocate physical page %lu\n", i);
@@ -194,7 +194,7 @@ int test_vmm_unmap() {
     
     // Verify all pages are mapped
     for (size_t i = 0; i < num_pages; i++) {
-        vaddr_t vaddr = base_vaddr + (i * PAGE_SIZE);
+        virt_addr vaddr = base_vaddr + (i * PAGE_SIZE);
         if (!vmm_is_mapped(&test_as, vaddr)) {
             KERROR("FAIL: Page %lu not mapped at 0x%lx\n", i, vaddr);
             return -1;
@@ -210,7 +210,7 @@ int test_vmm_unmap() {
     
     // Verify all pages are unmapped
     for (size_t i = 0; i < num_pages; i++) {
-        vaddr_t vaddr = base_vaddr + (i * PAGE_SIZE);
+        virt_addr vaddr = base_vaddr + (i * PAGE_SIZE);
         if (vmm_is_mapped(&test_as, vaddr)) {
             KERROR("FAIL: Page %lu still mapped after range unmap at 0x%lx\n", i, vaddr);
             return -1;
@@ -219,13 +219,13 @@ int test_vmm_unmap() {
     KSUCCESS("Range of %lu pages unmapped successfully\n", num_pages);
     
     // Test 3: Partial range unmap
-    vaddr_t partial_base = 0x700000;
+    virt_addr partial_base = 0x700000;
     size_t partial_pages = 6;
     
     // Map pages
     for (size_t i = 0; i < partial_pages; i++) {
-        vaddr_t vaddr = partial_base + (i * PAGE_SIZE);
-        paddr_t paddr = pmm_alloc_page();
+        virt_addr vaddr = partial_base + (i * PAGE_SIZE);
+        phys_addr paddr = pmm_alloc_page();
         
         if (vmm_map_page(&test_as, vaddr, paddr, PTE_WRITABLE | PTE_USER) != 0) {
             KERROR("FAIL: vmm_map_page failed for partial test page %lu\n", i);
@@ -234,7 +234,7 @@ int test_vmm_unmap() {
     }
     
     // Unmap middle 3 pages (pages 1, 2, 3)
-    vaddr_t unmap_start = partial_base + PAGE_SIZE;
+    virt_addr unmap_start = partial_base + PAGE_SIZE;
     size_t unmap_size = 3 * PAGE_SIZE;
     
     if (vmm_unmap_range(&test_as, unmap_start, unmap_size) != 0) {
@@ -258,7 +258,7 @@ int test_vmm_unmap() {
     
     // Verify middle pages are unmapped
     for (size_t i = 1; i <= 3; i++) {
-        vaddr_t vaddr = partial_base + (i * PAGE_SIZE);
+        virt_addr vaddr = partial_base + (i * PAGE_SIZE);
         if (vmm_is_mapped(&test_as, vaddr)) {
             KERROR("FAIL: Page %lu should be unmapped but isn't at 0x%lx\n", i, vaddr);
             return -1;
@@ -267,8 +267,8 @@ int test_vmm_unmap() {
     KSUCCESS("Partial range unmap working correctly\n");
     
     // Test 4: Unaligned unmap (should align properly)
-    vaddr_t aligned_base = 0x600000;
-    paddr_t aligned_paddr = pmm_alloc_page();
+    virt_addr aligned_base = 0x600000;
+    phys_addr aligned_paddr = pmm_alloc_page();
     
     if (vmm_map_page(&test_as, aligned_base, aligned_paddr, PTE_WRITABLE | PTE_USER) != 0) {
         KERROR("FAIL: vmm_map_page failed for alignment test\n");
@@ -276,7 +276,7 @@ int test_vmm_unmap() {
     }
     
     // Unmap with unaligned address and size - should still unmap the whole page
-    vaddr_t unaligned_addr = aligned_base + 0x100;  // Offset into page
+    virt_addr unaligned_addr = aligned_base + 0x100;  // Offset into page
     
     if (vmm_unmap_page(&test_as, unaligned_addr) != 0) {
         KERROR("FAIL: vmm_unmap_range failed for unaligned test\n");
@@ -308,8 +308,8 @@ int test_vmm_unmap_memory_access() {
     }
     
     // Test 1: Verify physical memory content persists after unmap
-    vaddr_t test_vaddr = 0x500000;
-    paddr_t test_paddr = pmm_alloc_page();
+    virt_addr test_vaddr = 0x500000;
+    phys_addr test_paddr = pmm_alloc_page();
     
     if (test_paddr == 0) {
         KERROR("FAIL: Could not allocate physical page\n");
@@ -335,7 +335,7 @@ int test_vmm_unmap_memory_access() {
         return -1;
     }
     
-    paddr_t resolved_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
+    phys_addr resolved_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
     if (resolved_paddr != test_paddr) {
         KERROR("FAIL: Translation incorrect before unmap\n");
         return -1;
@@ -356,7 +356,7 @@ int test_vmm_unmap_memory_access() {
     KSUCCESS("Page successfully unmapped\n");
     
     // Verify translation no longer works
-    paddr_t unmapped_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
+    phys_addr unmapped_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
     if (unmapped_paddr != 0) {  // Assuming vmm_virt_to_phys returns 0 for unmapped pages
         kprintf("INFO: vmm_virt_to_phys returned 0x%lx for unmapped page (implementation specific)\n", unmapped_paddr);
     } else {
@@ -373,7 +373,7 @@ int test_vmm_unmap_memory_access() {
     KSUCCESS("Physical memory content preserved after unmap\n");
     
     // Test 2: Verify page table entries are cleared
-    pte_t *pte = vmm_walk_page_table(&test_as, test_vaddr, false);
+    page_table_entry *pte = vmm_walk_page_table(&test_as, test_vaddr, false);
     if (pte && (*pte & PTE_PRESENT)) {
         KERROR("FAIL: PTE still marked present after unmap\n");
         kprintf("PTE value: 0x%lx\n", *pte);
@@ -382,7 +382,7 @@ int test_vmm_unmap_memory_access() {
     KSUCCESS("Page table entry properly cleared\n");
     
     // Test 3: Test remapping to same virtual address works
-    paddr_t new_paddr = pmm_alloc_page();
+    phys_addr new_paddr = pmm_alloc_page();
     if (new_paddr == 0) {
         KERROR("FAIL: Could not allocate new physical page\n");
         return -1;
@@ -405,7 +405,7 @@ int test_vmm_unmap_memory_access() {
         return -1;
     }
     
-    paddr_t remapped_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
+    phys_addr remapped_paddr = vmm_virt_to_phys(&test_as, test_vaddr);
     if (remapped_paddr != new_paddr) {
         KERROR("FAIL: Remapped translation incorrect. Expected: 0x%lx, Got: 0x%lx\n",
                 new_paddr, remapped_paddr);
@@ -415,8 +415,8 @@ int test_vmm_unmap_memory_access() {
     
     // Test 4: Test range unmap with memory access verification
     size_t range_pages = 3;
-    vaddr_t range_base = 0x600000;
-    paddr_t range_paddrs[3];
+    virt_addr range_base = 0x600000;
+    phys_addr range_paddrs[3];
     uint64_t range_patterns[3] = {0x1111111111111111ULL, 0x2222222222222222ULL, 0x3333333333333333ULL};
     
     // Map and initialize range
@@ -427,7 +427,7 @@ int test_vmm_unmap_memory_access() {
             return -1;
         }
         
-        vaddr_t vaddr = range_base + (i * PAGE_SIZE);
+        virt_addr vaddr = range_base + (i * PAGE_SIZE);
         
         // Write pattern to physical memory
         uint64_t *phys_ptr = (uint64_t *)(range_paddrs[i] + get_hhdm_offset());
@@ -442,7 +442,7 @@ int test_vmm_unmap_memory_access() {
     
     // Verify all pages are mapped
     for (size_t i = 0; i < range_pages; i++) {
-        vaddr_t vaddr = range_base + (i * PAGE_SIZE);
+        virt_addr vaddr = range_base + (i * PAGE_SIZE);
         if (!vmm_is_mapped(&test_as, vaddr)) {
             KERROR("FAIL: Range page %lu not mapped\n", i);
             return -1;
@@ -458,7 +458,7 @@ int test_vmm_unmap_memory_access() {
     
     // Verify all pages are unmapped
     for (size_t i = 0; i < range_pages; i++) {
-        vaddr_t vaddr = range_base + (i * PAGE_SIZE);
+        virt_addr vaddr = range_base + (i * PAGE_SIZE);
         if (vmm_is_mapped(&test_as, vaddr)) {
             KERROR("FAIL: Range page %lu still mapped after unmap\n", i);
             return -1;
@@ -481,8 +481,8 @@ int test_vmm_unmap_memory_access() {
     kprintf("=== Testing Page Fault on Unmapped Memory ===\n");
     
     // Set up a page for fault testing
-    vaddr_t fault_test_vaddr = 0x700000;
-    paddr_t fault_test_paddr = pmm_alloc_page();
+    virt_addr fault_test_vaddr = 0x700000;
+    phys_addr fault_test_paddr = pmm_alloc_page();
     
     if (fault_test_paddr == 0) {
         KERROR("FAIL: Could not allocate physical page for fault test\n");
@@ -525,7 +525,7 @@ int test_vmm_unmap_memory_access() {
     // Instead, we'll verify the conditions that WOULD cause a page fault:
     
     // 1. Verify PTE is not present (would cause page fault)
-    pte_t *fault_pte = vmm_walk_page_table(&test_as, fault_test_vaddr, false);
+    page_table_entry *fault_pte = vmm_walk_page_table(&test_as, fault_test_vaddr, false);
     if (fault_pte && (*fault_pte & PTE_PRESENT)) {
         KERROR("FAIL: PTE still present - would NOT cause page fault\n");
         return -1;
@@ -533,7 +533,7 @@ int test_vmm_unmap_memory_access() {
     KSUCCESS("PTE not present - would cause page fault on access\n");
     
     // 2. Verify translation fails (would cause page fault)
-    paddr_t fault_translation = vmm_virt_to_phys(&test_as, fault_test_vaddr);
+    phys_addr fault_translation = vmm_virt_to_phys(&test_as, fault_test_vaddr);
     if (fault_translation != 0) {
         kprintf("INFO: Translation returned 0x%lx (implementation specific)\n", fault_translation);
     } else {
@@ -574,7 +574,7 @@ int test_vmm_unmap_memory_access() {
         return -1;
     }
     
-    paddr_t recovered_paddr = vmm_virt_to_phys(&test_as, fault_test_vaddr);
+    phys_addr recovered_paddr = vmm_virt_to_phys(&test_as, fault_test_vaddr);
     if (recovered_paddr != fault_test_paddr) {
         KERROR("FAIL: Translation incorrect after remapping\n");
         return -1;
@@ -605,9 +605,9 @@ int test_vmm_errors() {
     struct addr_space *test_as = vmm_create_address_space();
     
     // Test 1: Double mapping should fail
-    vaddr_t vaddr = 0x600000;
-    paddr_t paddr1 = pmm_alloc_page();
-    paddr_t paddr2 = pmm_alloc_page();
+    virt_addr vaddr = 0x600000;
+    phys_addr paddr1 = pmm_alloc_page();
+    phys_addr paddr2 = pmm_alloc_page();
     // First mapping should succeed
     if (vmm_map_page(test_as, vaddr, paddr1, PTE_WRITABLE | PTE_USER) != 0) {
         KERROR("FAIL: First mapping failed\n");
@@ -667,13 +667,13 @@ int test_memory_access_safe() {
         return -1;
     }
     
-    paddr_t test_paddr = pmm_alloc_page();
+    phys_addr test_paddr = pmm_alloc_page();
     if (test_paddr == 0) {
         KERROR("FAIL: Could not allocate physical page\n");
         return -1;
     }
     
-    vaddr_t test_vaddr = 0x400000;
+    virt_addr test_vaddr = 0x400000;
     
     // Write test pattern to physical memory
     uint64_t *phys_ptr = (uint64_t *)(test_paddr + get_hhdm_offset());
@@ -690,7 +690,7 @@ int test_memory_access_safe() {
     }
     
     // Verify our translation function works correctly
-    paddr_t resolved = vmm_virt_to_phys(&test_as, test_vaddr);
+    phys_addr resolved = vmm_virt_to_phys(&test_as, test_vaddr);
     if (resolved != test_paddr) {
         KERROR("FAIL: Translation wrong. Expected: 0x%lx, Got: 0x%lx\n",
                 test_paddr, resolved);
@@ -698,13 +698,13 @@ int test_memory_access_safe() {
     }
     
     // Calculate what the virtual address SHOULD map to
-    pte_t *pte = vmm_walk_page_table(&test_as, test_vaddr, false);
+    page_table_entry *pte = vmm_walk_page_table(&test_as, test_vaddr, false);
     if (!pte || !(*pte & PTE_PRESENT)) {
         KERROR("FAIL: PTE not present\n");
         return -1;
     }
     
-    paddr_t pte_phys = PTE_ADDR(*pte);
+    phys_addr pte_phys = PTE_ADDR(*pte);
     uint64_t *pte_virt_ptr = (uint64_t *)(pte_phys + get_hhdm_offset());
     
     kprintf("PTE points to physical 0x%lx, accessing via HHDM at %p\n", 
