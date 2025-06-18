@@ -15,8 +15,9 @@ void init_percpu_data(uint32_t processor_id) {
     uint64_t ptr = (uint64_t)&percpu_processor_ids[processor_id];
     // IMPORTANTE : 0xC0000101 is not an address it is a NAME
     // and it is the name of a register
-    asm volatile("wrmsr" : : "c"(0xC0000101), 
-            "a"((uint32_t)ptr), "d"((uint32_t)(ptr >> 32)));
+    asm volatile("wrmsr" 
+            : 
+            : "c"(0xC0000101), "a"((uint32_t)ptr), "d"((uint32_t)(ptr >> 32)));
 }
 
 uint32_t get_current_core_id() {
@@ -29,7 +30,6 @@ void ap_entry_point(struct limine_smp_info *cpu_info) {
     reload_idt();
     
     init_percpu_data(cpu_info->processor_id); 
-    // Enhanced APIC setup with verification - pass the LAPIC ID directly
     if (apic_timer_init_cpu(cpu_info->lapic_id) != 0) {
         KERROR("Failed to initialize APIC timer on CPU %u\n", cpu_info->lapic_id);
         hcf();
@@ -60,7 +60,6 @@ void smp_init() {
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
-        
         
         if (cpu->lapic_id == mp_response->bsp_lapic_id) {     
             init_percpu_data(cpu->processor_id); 
