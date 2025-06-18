@@ -175,14 +175,14 @@ void kprintf(const char* restrict format, ...){
     va_end(args);
 
     if(out_len < 0){
-        int_flags_t flags;
+        int_flags flags;
         spinlock_lock_intsave(&kprint_lock, &flags);
         terminal_writestring("Error: Buffer overflow - data exceeds the allowed buffer size of 1024 chars.");
         spinlock_unlock_intrestore(&kprint_lock, flags);
         
         return;
     }
-    int_flags_t flags;
+    int_flags flags;
     spinlock_lock_intsave(&kprint_lock, &flags);
     terminal_write(buf, out_len);
     spinlock_unlock_intrestore(&kprint_lock, flags);
@@ -199,7 +199,7 @@ void KSUCCESS(const char* restrict format, ...){
     va_end(args);
 
     if(out_len < 0){
-        int_flags_t flags;
+        int_flags flags;
         spinlock_lock_intsave(&kprint_lock, &flags);
         terminal_writestring("Error: Buffer overflow - data exceeds the allowed buffer size of 1024 chars.");
         spinlock_unlock_intrestore(&kprint_lock, flags);
@@ -207,7 +207,7 @@ void KSUCCESS(const char* restrict format, ...){
         return;
     }
     
-    int_flags_t flags;
+    int_flags flags;
     spinlock_lock_intsave(&kprint_lock, &flags);
     terminal_writestring("[");
     terminal_setcolor(0x00FF00, 0x000035);
@@ -229,7 +229,7 @@ void KWARN(const char* restrict format, ...){
     va_end(args);
 
     if(out_len < 0){
-        int_flags_t flags;
+        int_flags flags;
         spinlock_lock_intsave(&kprint_lock, &flags);
         terminal_writestring("Error: Buffer overflow - data exceeds the allowed buffer size of 1024 chars.");
         spinlock_unlock_intrestore(&kprint_lock, flags);
@@ -237,7 +237,7 @@ void KWARN(const char* restrict format, ...){
         return;
     }
     
-    int_flags_t flags;
+    int_flags flags;
     spinlock_lock_intsave(&kprint_lock, &flags);
     terminal_writestring("[");
     terminal_setcolor(0xFFFF00, 0x000035);
@@ -259,7 +259,7 @@ void KERROR(const char* restrict format, ...){
     va_end(args);
 
     if(out_len < 0){
-        int_flags_t flags;
+        int_flags flags;
         spinlock_lock_intsave(&kprint_lock, &flags);
         terminal_writestring("Error: Buffer overflow - data exceeds the allowed buffer size of 1024 chars.");
         spinlock_unlock_intrestore(&kprint_lock, flags);
@@ -267,7 +267,7 @@ void KERROR(const char* restrict format, ...){
         return;
     }
     
-    int_flags_t flags;
+    int_flags flags;
     spinlock_lock_intsave(&kprint_lock, &flags);
     terminal_writestring("[");
     terminal_setcolor(0xFF0000, 0x000035);

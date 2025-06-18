@@ -37,37 +37,37 @@ struct page_table_t {
 } __attribute__((aligned(PAGE_SIZE)));
 
 
-struct addr_space_t{
+struct addr_space{
     struct page_table_t *pml4;
     uint64_t total_pages;
     uint64_t flags;
 };
 
 int vmm_init(void);
-struct addr_space_t *vmm_create_address_space(void);
-void vmm_destroy_address_space(struct addr_space_t *as);
+struct addr_space *vmm_create_address_space(void);
+void vmm_destroy_address_space(struct addr_space *as);
 
 struct page_table_t *vmm_alloc_page_table(void);
 void vmm_free_page_table(struct page_table_t *pt);
-pte_t *vmm_walk_page_table(struct addr_space_t *as, vaddr_t vaddr, bool create);
+pte_t *vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create);
 
 
-int vmm_map_page(struct addr_space_t *as,vaddr_t vaddr, paddr_t paddr, uint64_t flags);
-int vmm_unmap_page(struct addr_space_t *as, vaddr_t vaddr);
-int vmm_map_range(struct addr_space_t *as, vaddr_t vaddr, 
+int vmm_map_page(struct addr_space *as,vaddr_t vaddr, paddr_t paddr, uint64_t flags);
+int vmm_unmap_page(struct addr_space *as, vaddr_t vaddr);
+int vmm_map_range(struct addr_space *as, vaddr_t vaddr, 
         paddr_t paddr, uint64_t size, uint64_t flags);
-int vmm_unmap_range(struct addr_space_t *as, vaddr_t vaddr, uint64_t size);
+int vmm_unmap_range(struct addr_space *as, vaddr_t vaddr, uint64_t size);
 
 
 // Address translation
-paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr);
-bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr);
-void vmm_switch_address_space(struct addr_space_t* as);
+paddr_t vmm_virt_to_phys(struct addr_space *as, vaddr_t vaddr);
+bool vmm_is_mapped(struct addr_space *as, vaddr_t vaddr);
+void vmm_switch_address_space(struct addr_space* as);
 
-int vmm_handle_page_fault(struct addr_space_t* as, vaddr_t fault_addr, 
+int vmm_handle_page_fault(struct addr_space* as, vaddr_t fault_addr, 
                             uint64_t error_code);
 
-struct addr_space_t *get_kernel_as(void);
+struct addr_space *get_kernel_as(void);
 
 static inline vaddr_t vmm_page_align_up(vaddr_t vaddr){
     return (vaddr + PAGE_SIZE - 1) & PAGE_MASK;

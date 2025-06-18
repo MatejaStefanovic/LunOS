@@ -7,7 +7,7 @@ int test_vmm_basic() {
     kprintf("=== VMM Basic Test ===\n");
     
     // Create a new address space
-    struct addr_space_t test_as;
+    struct addr_space test_as;
     test_as.pml4 = vmm_alloc_page_table();
     test_as.total_pages = 0;
     
@@ -83,7 +83,7 @@ int test_vmm_basic() {
 int test_vmm_range() {
     kprintf("=== VMM Range Test ===\n");
     
-    struct addr_space_t test_as;
+    struct addr_space test_as;
     test_as.pml4 = vmm_alloc_page_table();
     test_as.total_pages = 0;
     
@@ -127,7 +127,7 @@ int test_vmm_range() {
 int test_vmm_unmap() {
     kprintf("=== VMM Unmap Test ===\n");
     
-    struct addr_space_t test_as;
+    struct addr_space test_as;
     test_as.pml4 = vmm_alloc_page_table();
     test_as.total_pages = 0;
     
@@ -298,7 +298,7 @@ int test_vmm_unmap() {
 int test_vmm_unmap_memory_access() {
     kprintf("=== VMM Unmap Memory Access Test ===\n");
     
-    struct addr_space_t test_as;
+    struct addr_space test_as;
     test_as.pml4 = vmm_alloc_page_table();
     test_as.total_pages = 0;
     
@@ -602,7 +602,7 @@ int test_vmm_unmap_memory_access() {
 int test_vmm_errors() {
     kprintf("=== VMM Error Handling Test ===\n");
     
-    struct addr_space_t *test_as = vmm_create_address_space();
+    struct addr_space *test_as = vmm_create_address_space();
     
     // Test 1: Double mapping should fail
     vaddr_t vaddr = 0x600000;
@@ -658,7 +658,7 @@ int test_vmm_errors() {
 int test_memory_access_safe() {
     kprintf("=== Safe Memory Access Test (No CR3 Switch) ===\n");
     
-    struct addr_space_t test_as;
+    struct addr_space test_as;
     test_as.pml4 = vmm_alloc_page_table();
     test_as.total_pages = 0;
     

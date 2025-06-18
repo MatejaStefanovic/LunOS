@@ -98,7 +98,7 @@ void terminal_scroll(void) {
     memmove(
         terminal_buffer,
         terminal_buffer + total_columns,
-        (total_rows - 1) * total_columns * sizeof(char)
+        (total_rows - 1) * total_columns * sizeof(struct term_cell_t)
     );
     
     // Clear the last row

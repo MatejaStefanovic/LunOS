@@ -1,7 +1,7 @@
 #include <kernel/memmgr.h>
 #include <kernel/pmm.h>
 
-int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start, 
+int mm_add_region(struct mem_descriptor *mm, vaddr_t start, 
         vaddr_t end, uint64_t flags){
 
     if(!mm || start >= end){
@@ -9,7 +9,7 @@ int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start,
         return -1;
     }
 
-    struct mem_region_t *region = kmalloc(sizeof(struct mem_region_t));
+    struct mem_region *region = kmalloc(sizeof(struct mem_region));
 
     region->start = start;
     region->end = end;
@@ -20,16 +20,16 @@ int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start,
     return 0;
 }
 
-int mm_remove_region(struct mem_descriptor_t *mm, vaddr_t start, vaddr_t end){
+int mm_remove_region(struct mem_descriptor *mm, vaddr_t start, vaddr_t end){
     if(!mm || start >= end){
     KERROR("NULL task mem descriptor or start addr is bigger than end addr\n");
         return -1;
     }
     
-    struct mem_region_t **current = &(mm->regions);
+    struct mem_region **current = &(mm->regions);
     while(*current){
         if((*current)->start == start && (*current)->end == end){
-            struct mem_region_t *rmr = *current;
+            struct mem_region *rmr = *current;
             *current = (*current)->next;
             kfree(rmr);
             return 0;
@@ -40,13 +40,13 @@ int mm_remove_region(struct mem_descriptor_t *mm, vaddr_t start, vaddr_t end){
     return -1;
 }
 
-struct mem_region_t *mm_find_region(struct mem_descriptor_t *mm, vaddr_t vaddr){
+struct mem_region *mm_find_region(struct mem_descriptor *mm, vaddr_t vaddr){
     if(!mm){
         KERROR("Task mem descriptor provided is NULL\n");
         return NULL;
     }
     
-    struct mem_region_t *region = mm->regions;
+    struct mem_region *region = mm->regions;
     while(region){
         if(region->start <= vaddr && vaddr <= region->end)
             return region;
@@ -57,9 +57,9 @@ struct mem_region_t *mm_find_region(struct mem_descriptor_t *mm, vaddr_t vaddr){
     return NULL;
 }
 
-struct mem_descriptor_t *mm_alloc(){
-    struct mem_descriptor_t *mem_desc = kmalloc(sizeof(struct mem_descriptor_t));
-    struct addr_space_t *as = vmm_create_address_space();
+struct mem_descriptor *mm_alloc(){
+    struct mem_descriptor *mem_desc = kmalloc(sizeof(struct mem_descriptor));
+    struct addr_space *as = vmm_create_address_space();
     
     if(!as)
         return NULL;
@@ -74,7 +74,7 @@ struct mem_descriptor_t *mm_alloc(){
     return mem_desc;
 }
 
-void mm_free(struct mem_descriptor_t *mm){
+void mm_free(struct mem_descriptor *mm){
     if(!mm){
         KERROR("Cannot free NULL task memory descriptor\n");
         return;
@@ -82,8 +82,8 @@ void mm_free(struct mem_descriptor_t *mm){
 
     vmm_destroy_address_space(mm->as);
     
-    struct mem_region_t *current = mm->regions;
-    struct mem_region_t *next;
+    struct mem_region *current = mm->regions;
+    struct mem_region *next;
 
     while (current) {
         next = current->next;
@@ -95,7 +95,7 @@ void mm_free(struct mem_descriptor_t *mm){
     kfree(mm);
 }
 
-int mm_setup_executable(struct mem_descriptor_t *mm, 
+int mm_setup_executable(struct mem_descriptor *mm, 
                        vaddr_t code_start, vaddr_t code_end, vaddr_t data_end) {
     mm_add_region(mm, code_start, code_end, RP_READ | RP_EXEC);
     
@@ -114,8 +114,8 @@ int mm_setup_executable(struct mem_descriptor_t *mm,
     return 0;
 }
 
-bool mm_check_access(struct mem_descriptor_t *mm, vaddr_t addr, uint64_t access_flags) {
-    struct mem_region_t *region = mm_find_region(mm, addr);
+bool mm_check_access(struct mem_descriptor *mm, vaddr_t addr, uint64_t access_flags) {
+    struct mem_region *region = mm_find_region(mm, addr);
     if (!region) 
         return false; 
     
@@ -128,7 +128,7 @@ bool mm_check_access(struct mem_descriptor_t *mm, vaddr_t addr, uint64_t access_
     return (region->flags & access_flags) == access_flags;
 }
 
-int mm_expand_stack(struct mem_descriptor_t *mm, vaddr_t fault_addr) {
+int mm_expand_stack(struct mem_descriptor *mm, vaddr_t fault_addr) {
     paddr_t phys_page = pmm_alloc_page();
     if (phys_page == 0) {
         return -1; 
@@ -140,7 +140,7 @@ int mm_expand_stack(struct mem_descriptor_t *mm, vaddr_t fault_addr) {
 }
 
 
-int mm_expand_heap(struct mem_descriptor_t *mm, vaddr_t fault_addr) {
+int mm_expand_heap(struct mem_descriptor *mm, vaddr_t fault_addr) {
     vaddr_t grow_start = mm->brk;
     
     paddr_t phys_start = buddy_alloc_pages(HEAP_GROW_ORDER);
@@ -177,14 +177,14 @@ uint64_t err_code_to_access_flags(uint64_t error_code) {
 
 void mm_page_fault_handler(uint64_t fault_addr, uint64_t error_code) {
     
-    struct mem_descriptor_t *mm = NULL;
+    struct mem_descriptor *mm = NULL;
     uint64_t access_flags = err_code_to_access_flags(error_code); 
     if (!mm_check_access(mm, fault_addr, access_flags)) {
         // Should be SIGSEGV but we don't have that yet
         return;
     }
 
-    struct mem_region_t *region = mm_find_region(mm, fault_addr);
+    struct mem_region *region = mm_find_region(mm, fault_addr);
     if (region->flags & RP_STACK) 
         mm_expand_stack(mm, fault_addr);
     else if (region->flags & RP_HEAP) 

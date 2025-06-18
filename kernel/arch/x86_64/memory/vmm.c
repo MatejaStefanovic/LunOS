@@ -5,7 +5,7 @@
 static struct page_table_t* current_pml4 = NULL;
 static uint64_t hhdm_offset;
 
-struct addr_space_t *kernel_as = NULL;
+struct addr_space *kernel_as = NULL;
 
 static struct page_table_t* get_current_pml4(){
     if(!current_pml4){
@@ -57,8 +57,8 @@ int vmm_init(){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
 
-    kernel_as = kmalloc(sizeof(struct addr_space_t));
-    memset(kernel_as, 0, sizeof(struct addr_space_t));
+    kernel_as = kmalloc(sizeof(struct addr_space));
+    memset(kernel_as, 0, sizeof(struct addr_space));
     
     if(!kernel_as){
         kprintf("Couldn't create kernel address space\n");
@@ -75,14 +75,14 @@ int vmm_init(){
     return 0;
 }
 
-struct addr_space_t *vmm_create_address_space(){
-    struct addr_space_t *as = kmalloc(sizeof(struct addr_space_t));
+struct addr_space *vmm_create_address_space(){
+    struct addr_space *as = kmalloc(sizeof(struct addr_space));
     if(!as){
         KERROR("Couldn't allocate memory for an address space\n");
         return NULL;
     }
 
-    memset(as, 0, sizeof(struct addr_space_t));
+    memset(as, 0, sizeof(struct addr_space));
 
     as->pml4 = vmm_alloc_page_table();
     if(!as->pml4){
@@ -103,7 +103,7 @@ struct addr_space_t *vmm_create_address_space(){
     return as;
 }
 
-void vmm_destroy_address_space(struct addr_space_t* as) {
+void vmm_destroy_address_space(struct addr_space* as) {
     if (!as || as == kernel_as) {
         KERROR("Either tried to destroy kernel addr space or a NULL addr space\n");
         return;
@@ -120,7 +120,7 @@ void vmm_destroy_address_space(struct addr_space_t* as) {
     kfree(as);
 }
 
-void vmm_switch_address_space(struct addr_space_t* as) {
+void vmm_switch_address_space(struct addr_space* as) {
     if (!as || !as->pml4){ 
         KERROR("Cannot switch to a NULL address space\n");
         return;
@@ -141,7 +141,7 @@ struct page_table_t* vmm_alloc_page_table(void){
 }
 
 
-pte_t* vmm_walk_page_table(struct addr_space_t *as, vaddr_t vaddr, bool create) {
+pte_t* vmm_walk_page_table(struct addr_space *as, vaddr_t vaddr, bool create) {
     if(!as || !as->pml4)
         return NULL;
 
@@ -186,7 +186,7 @@ pte_t* vmm_walk_page_table(struct addr_space_t *as, vaddr_t vaddr, bool create) 
     return NULL; 
 }
 
-static int _vmm_map_page_no_flush(struct addr_space_t *as, vaddr_t vaddr, 
+static int _vmm_map_page_no_flush(struct addr_space *as, vaddr_t vaddr, 
         paddr_t paddr, uint64_t flags){
 
     if(!as){
@@ -215,7 +215,7 @@ static int _vmm_map_page_no_flush(struct addr_space_t *as, vaddr_t vaddr,
     return 0;
 }
 
-int vmm_map_page(struct addr_space_t *as, vaddr_t vaddr, 
+int vmm_map_page(struct addr_space *as, vaddr_t vaddr, 
         paddr_t paddr, uint64_t flags){
 
     if(!as){
@@ -245,7 +245,7 @@ int vmm_map_page(struct addr_space_t *as, vaddr_t vaddr,
     return 0;
 }
 
-int vmm_map_range(struct addr_space_t *as, vaddr_t vaddr, 
+int vmm_map_range(struct addr_space *as, vaddr_t vaddr, 
         paddr_t paddr, size_t size, uint64_t flags) {
     
     if(!as){
@@ -273,7 +273,7 @@ int vmm_map_range(struct addr_space_t *as, vaddr_t vaddr,
     return 0;
 }
 
-static int _vmm_unmap_page_no_flush(struct addr_space_t* as, vaddr_t vaddr) {
+static int _vmm_unmap_page_no_flush(struct addr_space* as, vaddr_t vaddr) {
     if (!as) return -1;
     
     vaddr = vmm_page_align_down(vaddr);
@@ -290,7 +290,7 @@ static int _vmm_unmap_page_no_flush(struct addr_space_t* as, vaddr_t vaddr) {
     return 0;
 }
 
-int vmm_unmap_page(struct addr_space_t *as, vaddr_t vaddr) {
+int vmm_unmap_page(struct addr_space *as, vaddr_t vaddr) {
     if (!as) return -1;
     
     vaddr = vmm_page_align_down(vaddr);
@@ -308,7 +308,7 @@ int vmm_unmap_page(struct addr_space_t *as, vaddr_t vaddr) {
     return 0;
 }
 
-int vmm_unmap_range(struct addr_space_t *as, vaddr_t vaddr, size_t size) {
+int vmm_unmap_range(struct addr_space *as, vaddr_t vaddr, size_t size) {
     if (!as || size == 0) return -1;
     
     vaddr_t vstart = vmm_page_align_down(vaddr);
@@ -321,7 +321,7 @@ int vmm_unmap_range(struct addr_space_t *as, vaddr_t vaddr, size_t size) {
     return 0;
 }
 
-paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr) {
+paddr_t vmm_virt_to_phys(struct addr_space *as, vaddr_t vaddr) {
     if(!as)
         return 0;
 
@@ -333,18 +333,18 @@ paddr_t vmm_virt_to_phys(struct addr_space_t *as, vaddr_t vaddr) {
     return PTE_ADDR(*pte) | PAGE_OFFSET(vaddr);
 }
 
-bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr) {
+bool vmm_is_mapped(struct addr_space *as, vaddr_t vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
 }
 
-struct addr_space_t *get_kernel_as(){
+struct addr_space *get_kernel_as(){
     return kernel_as;
 }
 void test_vmm() {
     kprintf("Testing VMM...\n");
     
     // Create a new address space
-    struct addr_space_t* test_as = vmm_create_address_space();
+    struct addr_space* test_as = vmm_create_address_space();
     if (!test_as) {
         kprintf("FAIL: Could not create address space\n");
         return;

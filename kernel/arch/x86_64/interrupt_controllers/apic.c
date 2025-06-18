@@ -15,7 +15,7 @@ int apic_global_init() {
     vaddr_t apic_vaddr = 0xFFFFFF8000000000UL;
     uint64_t mmio_flags = PTE_PRESENT | PTE_WRITABLE | PTE_CACHE_DISABLE | PTE_WRITETHROUGH; 
     
-    struct addr_space_t *kernel_as = get_kernel_as();
+    struct addr_space *kernel_as = get_kernel_as();
     
     int result = vmm_map_range(kernel_as, apic_vaddr, APIC_BASE_ADDR, 0x1000, mmio_flags);
     if (result != 0) {

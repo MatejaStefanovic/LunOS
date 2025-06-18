@@ -30,7 +30,7 @@ void decode_page_fault_error(uint64_t err_code) {
         kprintf(" - Instruction Fetch Fault -\n");
 }
 
-void isr0_divide_by_zero(struct regs_t *r){
+void isr0_divide_by_zero(struct regs *r){
     kprintf("EXCEPTION: Divide by zero\n");
     kprintf("Division happened at address: 0x%lx", r->rip);
     kprintf("\n");
@@ -38,7 +38,7 @@ void isr0_divide_by_zero(struct regs_t *r){
     hcf();
 }
 
-void isr14_page_fault(struct regs_t *r){
+void isr14_page_fault(struct regs *r){
     if(r->cr2 >= KERNEL_SPACE_START){
         KERROR("Page fault occurred at address: %lx\n", r->cr2);
         decode_page_fault_error(r->err_code);
@@ -55,7 +55,7 @@ void isr14_page_fault(struct regs_t *r){
 void isr_reserved(){
     kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
-void isr_dispatch(struct regs_t *r){
+void isr_dispatch(struct regs *r){
     switch (r->int_no){
         // 0 - 32 - Exception handlers
         case 0: 
