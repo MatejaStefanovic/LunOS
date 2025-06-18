@@ -67,9 +67,7 @@ void vmm_switch_address_space(struct addr_space_t* as);
 int vmm_handle_page_fault(struct addr_space_t* as, vaddr_t fault_addr, 
                             uint64_t error_code);
 
-// Debug functions
-void vmm_dump_page_table_entry(vaddr_t vaddr);
-void vmm_dump_regions(void);
+struct addr_space_t *get_kernel_as(void);
 
 static inline vaddr_t vmm_page_align_up(vaddr_t vaddr){
     return (vaddr + PAGE_SIZE - 1) & PAGE_MASK;
@@ -93,16 +91,4 @@ static inline void vmm_flush_tlb_single(vaddr_t vaddr) {
 }
 
 void test_vmm(void);
-/*
-    Might be useful in the future Idk
-    struct limine_kernel_address_request *ka_req = get_kernel_address_request();
-    vaddr_t kernel_virt = ka_req->response->virtual_base;
-    paddr_t kernel_phys = ka_req->response->physical_base;
-    
-    extern char _kernel_start[];
-    extern char _kernel_end[];
-
-    uint64_t kernel_size = (uint64_t)_kernel_end - (uint64_t)_kernel_start;
- 
-*/
 #endif

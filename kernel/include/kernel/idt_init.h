@@ -32,5 +32,6 @@ struct idt_ptr {
 extern void setIdt(uint16_t limit, uint64_t base);
 void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector, uint8_t flags);
 void init_idt(void);
+void reload_idt(void);
 
 #endif

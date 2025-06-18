@@ -52,6 +52,9 @@ ISR_NOERR 29
 ISR_NOERR 30
 ISR_NOERR 31
 
+# We're in the IRQ territory now
+ISR_NOERR 64
+
 .global isr_common_stub
 isr_common_stub:
     # Save all general purpose registers

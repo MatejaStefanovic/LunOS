@@ -337,7 +337,9 @@ bool vmm_is_mapped(struct addr_space_t *as, vaddr_t vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
 }
 
-
+struct addr_space_t *get_kernel_as(){
+    return kernel_as;
+}
 void test_vmm() {
     kprintf("Testing VMM...\n");
     

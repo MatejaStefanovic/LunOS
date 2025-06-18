@@ -3,6 +3,8 @@
 #include <kernel/halt.h>
 #include <kernel/memmgr.h>
 
+#include <kernel/apic.h>
+
 void decode_page_fault_error(uint64_t err_code) {
     kprintf("Error code: 0x%lx\n", err_code);
 
@@ -49,6 +51,7 @@ void isr14_page_fault(struct regs_t *r){
     //mm_page_fault_handler(r->cr2, r->err_code);
 }
 
+
 void isr_reserved(){
     kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
@@ -85,7 +88,6 @@ void isr_dispatch(struct regs_t *r){
         case 10:
         case 11:
         case 12:
-        case 13:
         case 16:
         case 17:
         case 18:
@@ -98,9 +100,14 @@ void isr_dispatch(struct regs_t *r){
             kprintf("isr%lu", r->int_no);
             hcf();
             break;
-
+        case 13:
+            KERROR("GPF at EIP: 0x%lx, Error Code: 0x%lx\n", r->rip, r->err_code);
+            break;
         // IRQ handlers
         case 33:
+            break;
+        case 64:
+            apic_timer_handler();
             break;
     }
 }
