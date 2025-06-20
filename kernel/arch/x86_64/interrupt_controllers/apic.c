@@ -4,6 +4,9 @@
 #include <kernel/klogging.h>
 #include <kernel/idt_init.h>
 #include <kernel/smp.h>
+#include <kernel/scheduler.h>
+
+#include <string.h>
 
 volatile uint32_t *apic_base = NULL;
 static uint32_t apic_timer_frequency = 0;
@@ -138,15 +141,17 @@ void apic_timer_set_frequency(uint32_t frequency) {
     
 }
 
-void apic_timer_handler() {
-    if(get_current_core_id() != 2)
-        kprintf("CORE: %d\n", get_current_core_id());
-    else
-        kprintf("YOLOO\n");
+void apic_timer_handler(struct regs *cpu_cont) {
     apic_write(APIC_EOI, 0);
+   
+    // current means current for this core as get_current_task returns 
+    // based on the core
+    struct task *current = get_current_task();
     
-    // TODO: scheduler stuff like
-    // schedule_sum_stuf();
+    if (current) 
+        memcpy(current->cpu_context, cpu_cont, sizeof(struct regs));
+    
+    schedule();
 }
 
 void apic_timer_enable() {

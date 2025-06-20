@@ -1,7 +1,9 @@
 #include <kernel/pmm.h>
+#include <kernel/spinlock.h>
 
 #define SLAB_THRESHOLD 2048  // Use slab for allocations <= 2KB
 
+DEFINE_SPINLOCK(kmalloc_lock);
 
 void *kmalloc(size_t size) {
     if (!size) {
@@ -11,7 +13,11 @@ void *kmalloc(size_t size) {
     
     // Use slab allocator for small allocations
     if (size <= SLAB_THRESHOLD) {
+        int_flags flags;
+        spinlock_lock_intsave(&kmalloc_lock, &flags);
         void *ptr = slab_alloc_size(size);
+        spinlock_unlock_intrestore(&kmalloc_lock, flags);
+
         if (ptr) {
             return ptr;
         }
@@ -35,7 +41,11 @@ void *kmalloc(size_t size) {
         return NULL;
     }
     
+    int_flags flags;
+    spinlock_lock_intsave(&kmalloc_lock, &flags);
     uint64_t phys_addr = buddy_alloc_pages(order);
+    spinlock_unlock_intrestore(&kmalloc_lock, flags);
+
     if (phys_addr == 0) {
         KERROR("Buddy failed to allocate pages\n");
         return NULL;
@@ -57,6 +67,8 @@ void *kmalloc(size_t size) {
     return (void *)start_of_data;
 }
 
+DEFINE_SPINLOCK(kfree_lock);
+
 void kfree(void *ptr){
     if(!ptr){
         return;
@@ -68,8 +80,11 @@ void kfree(void *ptr){
         if (free_obj->magic == FREED_PATTERN) {
             KERROR("Double free detected in slab object at %p\n", ptr);
             return;
-        }    
+        }   
+        int_flags flags;
+        spinlock_lock_intsave(&kfree_lock, &flags);
         slab_free(slab, ptr);
+        spinlock_unlock_intrestore(&kfree_lock, flags);
         return;
     }
 
@@ -106,13 +121,24 @@ void kfree(void *ptr){
 
     header->magic = FREED_PATTERN;
     uint64_t phys_addr = virt_to_phys(header);
+
+    int_flags flags;
+    spinlock_lock_intsave(&kfree_lock, &flags);
     buddy_free_pages(phys_addr, header->order);
+    spinlock_unlock_intrestore(&kfree_lock, flags);
 }
 
 uint64_t pmm_alloc_page(){
-    return buddy_alloc_page();
+    int_flags flags;
+    spinlock_lock_intsave(&kmalloc_lock, &flags);
+    uint64_t phys = buddy_alloc_page();
+    spinlock_unlock_intrestore(&kmalloc_lock, flags);
+    return phys;
 }
 
 void pmm_free_page(uint64_t phys){
-    return buddy_free_page(phys);
+    int_flags flags;
+    spinlock_lock_intsave(&kfree_lock, &flags);
+    buddy_free_page(phys);
+    spinlock_unlock_intrestore(&kfree_lock, flags);
 }

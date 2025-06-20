@@ -3,6 +3,7 @@
 #include <kernel/apic.h>
 #include <kernel/memutils.h>
 #include <kernel/klogging.h>
+#include <kernel/scheduler.h>
 
 uint32_t percpu_processor_ids[MAX_CORES];
 
@@ -30,6 +31,8 @@ void ap_entry_point(struct limine_smp_info *cpu_info) {
     reload_idt();
     
     init_percpu_data(cpu_info->processor_id); 
+    scheduler_percpu_init();
+
     if (apic_timer_init_cpu(cpu_info->lapic_id) != 0) {
         KERROR("Failed to initialize APIC timer on CPU %u\n", cpu_info->lapic_id);
         hcf();
@@ -37,10 +40,14 @@ void ap_entry_point(struct limine_smp_info *cpu_info) {
     
     apic_timer_set_frequency(100);
     apic_timer_enable();
-    asm volatile ("sti");
     KSUCCESS("CPU %u online with verified APIC timer\n", cpu_info->lapic_id);
     
-    hcf();
+    struct task *task1 = create_kernel_task();
+    struct task *task2 = create_kernel_task(); 
+    struct task *task3 = create_kernel_task();
+    
+    while(1)
+        __asm__ __volatile__("pause");
 }
 
 // SMP initialization
@@ -62,10 +69,10 @@ void smp_init() {
         struct limine_smp_info *cpu = mp_response->cpus[i];
         
         if (cpu->lapic_id == mp_response->bsp_lapic_id) {     
-            init_percpu_data(cpu->processor_id); 
+            init_percpu_data(cpu->processor_id);        
+            scheduler_percpu_init();
             continue; // Skip BSP
         }
-        
         kprintf("Starting CPU %lu (LAPIC ID: %u)\n", i, cpu->lapic_id);
         cpu->goto_address = ap_entry_point;
     }

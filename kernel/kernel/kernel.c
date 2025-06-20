@@ -7,6 +7,7 @@
 #include <kernel/apic.h>
 #include <kernel/timer.h>
 #include <kernel/smp.h>
+#include <kernel/scheduler.h>
 
 #include <tests/malloc_tests.h>
 #include <tests/vmm_tests.h>
@@ -39,9 +40,19 @@ void _start() {
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();
-         
-    smp_init();
-    hcf();
+    
+    
+    scheduler_init();
+   
+    smp_init(); 
+    
+
+    struct task *task1 = create_kernel_task();
+    struct task *task2 = create_kernel_task(); 
+    struct task *task3 = create_kernel_task();
+    
+    while(1)
+        __asm__ __volatile__("pause");
 }
 
 

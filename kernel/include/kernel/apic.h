@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <kernel/regs.h>
 
 #define APIC_BASE_ADDR          0xFEE00000
 // APIC register offsets from our base ^
@@ -38,7 +39,7 @@ void apic_timer_set_frequency(uint32_t frequency);
 
 void apic_timer_enable(void);
 void apic_timer_disable(void);
-void apic_timer_handler(void);
+void apic_timer_handler(struct regs *cpu_cont);
 uint64_t apic_timer_get_ticks(void);
 
 // A little bit of fancy macro stuff

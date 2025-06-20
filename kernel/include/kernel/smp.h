@@ -5,8 +5,14 @@
 
 #define MAX_CORES 8
 
+#define DECLARE_PER_CPU(type, name) \
+    extern type __percpu_##name[MAX_CORES]
+
 #define DEFINE_PER_CPU(type, name) \
     static type __percpu_##name[MAX_CORES]
+
+#define DEFINE_PER_CPU_GLOBAL(type, name) \
+    type __percpu_##name[MAX_CORES]
 
 #define DEFINE_PER_CPU_VOLATILE(type, name) \
     static volatile type __percpu_##name[MAX_CORES]

@@ -107,7 +107,7 @@ void isr_dispatch(struct regs *r){
         case 33:
             break;
         case 64:
-            apic_timer_handler();
+            apic_timer_handler(r);
             break;
     }
 }
