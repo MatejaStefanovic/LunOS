@@ -26,6 +26,7 @@
 
 // APIC Timer Modes
 #define APIC_TIMER_ONESHOT      0x00000000
+#define APIC_TIMER_LVT_MASKED   0x10000
 #define APIC_TIMER_PERIODIC     0x00020000
 #define APIC_TIMER_TSC_DEADLINE 0x00040000
 #define APIC_TIMER_VECTOR       0x40
@@ -39,7 +40,7 @@ void apic_timer_set_frequency(uint32_t frequency);
 
 void apic_timer_enable(void);
 void apic_timer_disable(void);
-void apic_timer_handler(struct regs *cpu_cont);
+void apic_timer_handler(void);
 uint64_t apic_timer_get_ticks(void);
 
 // A little bit of fancy macro stuff

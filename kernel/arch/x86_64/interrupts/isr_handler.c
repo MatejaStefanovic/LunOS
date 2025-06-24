@@ -30,42 +30,40 @@ void decode_page_fault_error(uint64_t err_code) {
         kprintf(" - Instruction Fetch Fault -\n");
 }
 
-void isr0_divide_by_zero(struct regs *r){
+void isr0_divide_by_zero(){
     kprintf("EXCEPTION: Divide by zero\n");
-    kprintf("Division happened at address: 0x%lx", r->rip);
-    kprintf("\n");
-
-    hcf();
 }
 
-void isr14_page_fault(struct regs *r){
-    if(r->cr2 >= KERNEL_SPACE_START){
-        KERROR("Page fault occurred at address: %lx\n", r->cr2);
-        decode_page_fault_error(r->err_code);
+void isr14_page_fault(uint64_t cr2, uint64_t err_code){
+    if(cr2 >= KERNEL_SPACE_START){
+        KERROR("Page fault occurred at address: %lx\n", cr2);
+        decode_page_fault_error(err_code);
         kprintf("This page fault occured in kernel space.. Time to panic :d\n");
         hcf();
     }
-    KERROR("Page fault occurred at address: %lx\n", r->cr2);
-    decode_page_fault_error(r->err_code);
+    KERROR("Page fault occurred at address: %lx\n", cr2);
+    decode_page_fault_error(err_code);
     hcf();
-    //mm_page_fault_handler(r->cr2, r->err_code);
+    //mm_page_fault_handler(cr2, fr->err_code);
 }
 
 
 void isr_reserved(){
     kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
-void isr_dispatch(struct regs *r){
-    switch (r->int_no){
+
+
+void isr_dispatch(struct interrupt_frame *fr){
+    switch (fr->int_no){
         // 0 - 32 - Exception handlers
         case 0: 
-            isr0_divide_by_zero(r);
+            isr0_divide_by_zero();
             break;
         case 14: // Page fault
-            isr14_page_fault(r);
+            isr14_page_fault(fr->cr2, fr->err_code);
             break;
         
-            case 15:
+        case 15:
         case 22:
         case 23:
         case 24:
@@ -97,17 +95,17 @@ void isr_dispatch(struct regs *r){
         case 28:
         case 29: 
         case 30:
-            kprintf("isr%lu", r->int_no);
+            kprintf("isr%lu", fr->int_no);
             hcf();
             break;
         case 13:
-            KERROR("GPF at EIP: 0x%lx, Error Code: 0x%lx\n", r->rip, r->err_code);
+            KERROR("GPF, Error Code: 0x%lx\n",fr->err_code);
             break;
         // IRQ handlers
         case 33:
             break;
         case 64:
-            apic_timer_handler(r);
+            apic_timer_handler();
             break;
     }
 }

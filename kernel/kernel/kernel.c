@@ -40,16 +40,10 @@ void _start() {
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();
-    
-    
-    scheduler_init();
-   
-    smp_init(); 
-    
 
-    struct task *task1 = create_kernel_task();
-    struct task *task2 = create_kernel_task(); 
-    struct task *task3 = create_kernel_task();
+    scheduler_init();
+    
+    smp_init(); 
     
     while(1)
         __asm__ __volatile__("pause");

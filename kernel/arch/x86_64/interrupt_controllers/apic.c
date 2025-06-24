@@ -135,22 +135,14 @@ void apic_timer_set_frequency(uint32_t frequency) {
     
     apic_write(APIC_TIMER_DIVIDE, 0x3);
     
-    apic_write(APIC_TIMER_LVT, APIC_TIMER_PERIODIC | APIC_TIMER_VECTOR);
+    apic_write(APIC_TIMER_LVT, APIC_TIMER_PERIODIC | APIC_TIMER_VECTOR | APIC_TIMER_LVT_MASKED);
     
     apic_write(APIC_TIMER_INITIAL, initial_count);
     
 }
-
-void apic_timer_handler(struct regs *cpu_cont) {
+void apic_timer_handler() {
     apic_write(APIC_EOI, 0);
    
-    // current means current for this core as get_current_task returns 
-    // based on the core
-    struct task *current = get_current_task();
-    
-    if (current) 
-        memcpy(current->cpu_context, cpu_cont, sizeof(struct regs));
-    
     schedule();
 }
 

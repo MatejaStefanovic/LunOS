@@ -40,8 +40,6 @@ extern void isr30(void);
 extern void isr31(void);
 
 void print_hex(uint32_t val);
-void isr_dispatch(struct regs *r);
-void isr0_divide_by_zero(struct regs *r);
-void isr14_page_fault();
+void isr_dispatch(struct interrupt_frame *fr);
 
 #endif

@@ -15,13 +15,14 @@
 #define TASK_DEAD 0x7
 
 struct task {
+    struct task_context cpu_context;
+    
     uint32_t pid;   // Process ID - always unique
     uint32_t tgid;  // Thread Group ID - used to see if thread belongs to process  
 
     // From 0 to 100 with 0 being the highest priority
     int priority;
     uint8_t state;
-    struct regs *cpu_context;
 
     struct mem_descriptor *md;
 
@@ -41,10 +42,9 @@ struct task {
 
 // Task creation and initialization
 struct task* create_task(void);
-struct task* create_kernel_task(void);
+struct task* create_kernel_task(void (*func)(void));    
 
 // Task scheduling and state management
-void schedule(void);
 void set_task_state(struct task *task, uint8_t state);
 void wake_up_task(struct task *task);
 

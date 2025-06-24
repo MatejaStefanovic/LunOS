@@ -27,25 +27,40 @@ uint32_t get_current_core_id() {
     return processor_id;
 }
 
+void boot_idle_task(){ 
+    apic_timer_enable();
+
+    while(1) {
+            kprintf("Core: %d, IDLE TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
+            for(volatile int i = 0; i < 100000000; i++); // Simple delay
+    }
+}
+
+void func(){
+    while(1) {
+            kprintf("Core: %d, Task: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
+            for(volatile int i = 0; i < 100000000; i++); // Simple delay
+    }
+}
+
 void ap_entry_point(struct limine_smp_info *cpu_info) {
     reload_idt();
     
     init_percpu_data(cpu_info->processor_id); 
     scheduler_percpu_init();
-
+    
     if (apic_timer_init_cpu(cpu_info->lapic_id) != 0) {
         KERROR("Failed to initialize APIC timer on CPU %u\n", cpu_info->lapic_id);
         hcf();
     }
     
     apic_timer_set_frequency(100);
-    apic_timer_enable();
-    KSUCCESS("CPU %u online with verified APIC timer\n", cpu_info->lapic_id);
-    
-    struct task *task1 = create_kernel_task();
-    struct task *task2 = create_kernel_task(); 
-    struct task *task3 = create_kernel_task();
-    
+    struct task *idle_task = create_kernel_task(boot_idle_task); 
+    struct task *task2 = create_kernel_task(func); 
+    struct task *task3 = create_kernel_task(func);
+
+    schedule_first_task(idle_task);
+
     while(1)
         __asm__ __volatile__("pause");
 }
@@ -63,7 +78,6 @@ void smp_init() {
 
     apic_timer_init_cpu(mp_response->bsp_lapic_id);  
     apic_timer_set_frequency(100);
-    apic_timer_enable();
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
@@ -76,4 +90,9 @@ void smp_init() {
         kprintf("Starting CPU %lu (LAPIC ID: %u)\n", i, cpu->lapic_id);
         cpu->goto_address = ap_entry_point;
     }
+    
+    struct task *idle_task = create_kernel_task(boot_idle_task); 
+    struct task *task1 = create_kernel_task(func); 
+    struct task *task2 = create_kernel_task(func); 
+    schedule_first_task(idle_task);
 }

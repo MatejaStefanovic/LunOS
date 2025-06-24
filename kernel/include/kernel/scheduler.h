@@ -9,14 +9,15 @@ extern struct list_node all_tasks;
 extern struct list_node zombie_tasks; 
 
 DECLARE_PER_CPU(struct list_node, cpu_runqueue);
+DECLARE_PER_CPU(struct task*, current_task);
 
-struct task *get_current_task();
 void scheduler_init(void);
 void scheduler_percpu_init(void);
+void schedule_first_task(struct task* idle_task);
+void schedule_next_task(struct task* next_task);
 void schedule(void);
 
-extern void context_switch(struct regs *prev, struct regs *next); 
-extern void initial_context_load(struct regs *r);
-extern void func();
+
+extern void load_next_task(struct task_context* cont);
 
 #endif

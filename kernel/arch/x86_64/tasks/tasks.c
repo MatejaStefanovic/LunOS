@@ -2,6 +2,7 @@
 #include <kernel/spinlock.h>
 #include <kernel/pmm.h>
 #include <kernel/smp.h>
+#include <kernel/scheduler.h>
 #include <string.h>
 
 DEFINE_SPINLOCK(task_list_lock);
@@ -44,12 +45,7 @@ struct task* create_task(){
     // uses create_task (fork, execv, clone etc.) 
     task->md = NULL;  
     
-    task->cpu_context = kmalloc(sizeof(struct regs));
-    if(!task->cpu_context){
-        kfree(task); // Clean up what we already allocated
-        return NULL;
-    }
-    memset(task->cpu_context, 0, sizeof(struct regs));
+    memset(&task->cpu_context, 0, sizeof(task->cpu_context));
 
     task->zombie = NULL;
     task->parent = NULL; // Will later be INIT when I end up making it
@@ -70,8 +66,7 @@ extern void func(); // To test the scheduler, later we'll use function ptr as an
                     // to create_kernel_task()
 
 DECLARE_PER_CPU(struct list_node, cpu_runqueue);
-
-struct task* create_kernel_task(){
+struct task* create_kernel_task(void (*func)(void)) {
     
     struct task *ktask = create_task();
     
@@ -86,12 +81,11 @@ struct task* create_kernel_task(){
     }
 
     // Set up stack pointer at top of allocated stack
-    ktask->cpu_context->rsp = ((uint64_t)stack + KERNEL_STACK_SIZE) & ~0xF;
-    ktask->cpu_context->userrsp = ktask->cpu_context->rsp;  // they're equal for kernel tasks
-    ktask->cpu_context->rip = (uint64_t)func;
-    ktask->cpu_context->rflags = 0x202;     // IF=1 + reserved bit
-    ktask->cpu_context->cs = 0x28;          // Kernel code segment
-    ktask->cpu_context->ss = 0x30;          // Kernel data segment       
+    ktask->cpu_context.stack_ptr = ((uint64_t)stack + KERNEL_STACK_SIZE);
+    ktask->cpu_context.rip = (uint64_t)func;
+    ktask->cpu_context.rflags = 0x202;     // IF=1 + reserved bit
+    ktask->cpu_context.cs = 0x28;          // Kernel code segment
+    ktask->cpu_context.ss = 0x30;          // Kernel data segment       
 
     list_init(&ktask->tasks_runnable);
     
@@ -100,7 +94,8 @@ struct task* create_kernel_task(){
     list_add_tail(&ktask->tasks, &all_tasks); 
     spinlock_unlock_intrestore(&task_list_lock, flags);
     
-    list_add_tail(&ktask->tasks_runnable, &this_core_read(cpu_runqueue));
+    schedule_next_task(ktask);
+    
     return ktask;
 }
 
