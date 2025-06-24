@@ -28,3 +28,14 @@ load_next_task:
     movq 72(%rdi), %rdi    
     
     iretq
+
+.globl build_iretq_frame 
+.type build_iretq_frame, @function
+build_iretq_frame:
+    pushq 152(%rdi) # SS - if needed
+    pushq 144(%rdi) # RSP - if needed
+    pushq 136(%rdi) # RFLAGS    
+    pushq 128(%rdi) # CS  
+    pushq 120(%rdi) # RIP     
+    
+    iretq

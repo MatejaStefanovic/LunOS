@@ -2,7 +2,7 @@
 #include <kernel/klogging.h>
 #include <kernel/halt.h>
 #include <kernel/memmgr.h>
-
+#include <kernel/scheduler.h>
 #include <kernel/apic.h>
 
 void decode_page_fault_error(uint64_t err_code) {
@@ -32,6 +32,7 @@ void decode_page_fault_error(uint64_t err_code) {
 
 void isr0_divide_by_zero(){
     kprintf("EXCEPTION: Divide by zero\n");
+    build_iretq_frame(&get_current_task()->cpu_context); 
 }
 
 void isr14_page_fault(uint64_t cr2, uint64_t err_code){

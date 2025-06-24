@@ -3,7 +3,7 @@
 #include <kernel/apic.h>
 #include <kernel/memutils.h>
 #include <kernel/klogging.h>
-#include <kernel/scheduler.h>
+#include <kernel/task_manager.h>
 
 uint32_t percpu_processor_ids[MAX_CORES];
 
@@ -27,18 +27,19 @@ uint32_t get_current_core_id() {
     return processor_id;
 }
 
-void boot_idle_task(){ 
-    apic_timer_enable();
-
+void func(){
     while(1) {
-            kprintf("Core: %d, IDLE TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
+            kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
             for(volatile int i = 0; i < 100000000; i++); // Simple delay
     }
 }
+void boot_idle_task(){ 
+    struct task *task1 = create_and_schedule_kernel_task(func); 
+    struct task *task2 = create_and_schedule_kernel_task(func); 
+    apic_timer_enable();
 
-void func(){
     while(1) {
-            kprintf("Core: %d, Task: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
+            kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
             for(volatile int i = 0; i < 100000000; i++); // Simple delay
     }
 }
@@ -55,11 +56,10 @@ void ap_entry_point(struct limine_smp_info *cpu_info) {
     }
     
     apic_timer_set_frequency(100);
-    struct task *idle_task = create_kernel_task(boot_idle_task); 
-    struct task *task2 = create_kernel_task(func); 
-    struct task *task3 = create_kernel_task(func);
+    struct task *idle_task = create_and_schedule_kernel_task(boot_idle_task); 
 
-    schedule_first_task(idle_task);
+    run_kernel_task(idle_task);
+
 
     while(1)
         __asm__ __volatile__("pause");
@@ -87,12 +87,12 @@ void smp_init() {
             scheduler_percpu_init();
             continue; // Skip BSP
         }
+        continue;
         kprintf("Starting CPU %lu (LAPIC ID: %u)\n", i, cpu->lapic_id);
         cpu->goto_address = ap_entry_point;
     }
     
-    struct task *idle_task = create_kernel_task(boot_idle_task); 
-    struct task *task1 = create_kernel_task(func); 
-    struct task *task2 = create_kernel_task(func); 
-    schedule_first_task(idle_task);
+    struct task *idle_task = create_and_schedule_kernel_task(boot_idle_task); 
+
+    run_kernel_task(idle_task);
 }

@@ -13,10 +13,11 @@ DECLARE_PER_CPU(struct task*, current_task);
 
 void scheduler_init(void);
 void scheduler_percpu_init(void);
-void schedule_first_task(struct task* idle_task);
-void schedule_next_task(struct task* next_task);
+void schedule_task(struct task* t);
+void run_task(struct task* t);
 void schedule(void);
 
+struct task* get_current_task(void);
 
 extern void load_next_task(struct task_context* cont);
 

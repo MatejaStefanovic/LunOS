@@ -2,7 +2,6 @@
 #include <kernel/spinlock.h>
 #include <kernel/pmm.h>
 #include <kernel/smp.h>
-#include <kernel/scheduler.h>
 #include <string.h>
 
 DEFINE_SPINLOCK(task_list_lock);
@@ -62,10 +61,6 @@ struct task* create_task(){
 }
 
 #define KERNEL_STACK_SIZE 4*PAGE_SIZE
-extern void func(); // To test the scheduler, later we'll use function ptr as an argument
-                    // to create_kernel_task()
-
-DECLARE_PER_CPU(struct list_node, cpu_runqueue);
 struct task* create_kernel_task(void (*func)(void)) {
     
     struct task *ktask = create_task();
@@ -93,8 +88,6 @@ struct task* create_kernel_task(void (*func)(void)) {
     spinlock_lock_intsave(&task_list_lock, &flags);
     list_add_tail(&ktask->tasks, &all_tasks); 
     spinlock_unlock_intrestore(&task_list_lock, flags);
-    
-    schedule_next_task(ktask);
     
     return ktask;
 }

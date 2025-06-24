@@ -17,18 +17,23 @@ void scheduler_percpu_init(){
     list_init(&this_core_read(cpu_runqueue));
 }
 
-void schedule_first_task(struct task* idle_task){
-    this_core_write(current_task, idle_task);
+void run_task(struct task* ttr){
+    this_core_write(current_task, ttr);
     struct task* curr = this_core_read(current_task);
 
     load_next_task(&curr->cpu_context);
 }
 
-void schedule_next_task(struct task* task) {
-    if (!task) return;
+void schedule_task(struct task* task) { 
+    if (!task)
+        return;
     
     // Add to current CPU's runqueue using tasks_runnable node
     list_add_tail(&task->tasks_runnable, &this_core_read(cpu_runqueue));
+}
+
+struct task* get_current_task(){
+    return this_core_read(current_task);
 }
 
 extern spinlock task_list_lock;
