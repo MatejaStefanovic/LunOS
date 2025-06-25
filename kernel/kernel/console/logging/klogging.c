@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <utils.h>
 
-int ui64_to_hex_str(uint64_t val, char *str){
+static int ui64_to_hex_str(uint64_t val, char *str){
     const char *hex_digits = "0123456789ABCDEF";
     int index = 0;
     if(val == 0){
@@ -27,7 +27,8 @@ int ui64_to_hex_str(uint64_t val, char *str){
 
     return index;
 }
-int ul_to_str(unsigned long value, char *str) {
+
+static int ul_to_str(unsigned long value, char *str) {
     int i = 0;
 
     // Handle zero explicitly

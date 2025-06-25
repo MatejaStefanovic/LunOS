@@ -16,7 +16,9 @@
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
 
-void _start() {
+void _start(void);
+
+void _start(void) {
     if(!LIMINE_BASE_REVISION_SUPPORTED) {
         hcf();
     }
@@ -40,6 +42,7 @@ void _start() {
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();
+
 
     scheduler_init();
     

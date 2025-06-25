@@ -71,6 +71,7 @@ virt_addr mm_mmap(struct mem_descriptor *mm, virt_addr addr, size_t len,
 bool mm_check_access(struct mem_descriptor *mm, virt_addr addr, uint64_t flags);
 
 int mm_expand_stack(struct mem_descriptor *mm, virt_addr fault_addr);
+int mm_expand_heap(struct mem_descriptor *mm, virt_addr fault_addr);
 void mm_page_fault_handler(uint64_t fault_addr, uint64_t error_code);
 
 #endif

@@ -5,7 +5,7 @@
 #include <kernel/scheduler.h>
 #include <kernel/apic.h>
 
-void decode_page_fault_error(uint64_t err_code) {
+static void decode_page_fault_error(uint64_t err_code) {
     kprintf("Error code: 0x%lx\n", err_code);
 
     if (err_code & 0x1)
@@ -30,12 +30,12 @@ void decode_page_fault_error(uint64_t err_code) {
         kprintf(" - Instruction Fetch Fault -\n");
 }
 
-void isr0_divide_by_zero(){
+static void isr0_divide_by_zero(void){
     kprintf("EXCEPTION: Divide by zero\n");
     build_iretq_frame(&get_current_task()->cpu_context); 
 }
 
-void isr14_page_fault(uint64_t cr2, uint64_t err_code){
+static void isr14_page_fault(uint64_t cr2, uint64_t err_code){
     if(cr2 >= KERNEL_SPACE_START){
         KERROR("Page fault occurred at address: %lx\n", cr2);
         decode_page_fault_error(err_code);
@@ -49,7 +49,7 @@ void isr14_page_fault(uint64_t cr2, uint64_t err_code){
 }
 
 
-void isr_reserved(){
+static void isr_reserved(void){
     kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
 

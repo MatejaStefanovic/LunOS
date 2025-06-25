@@ -1,18 +1,19 @@
 #include <kernel/tasks.h>
-#include <kernel/spinlock.h>
 #include <kernel/pmm.h>
 #include <kernel/smp.h>
 #include <string.h>
 
+
 DEFINE_SPINLOCK(task_list_lock);
+static DEFINE_SPINLOCK(pid_ctr_lock);
+
 extern struct list_node all_tasks; 
 extern struct list_node zombie_tasks;
 
 #define PID_MAX 1111111111  // Wrap around if we reach **I sincerely hope this never happens**
-uint32_t pid_counter = 1;
+static uint32_t pid_counter = 0;   // Start at 0 for INIT
 
-DEFINE_SPINLOCK(pid_ctr_lock);
-uint32_t incr_pid_ctr(){
+static uint32_t incr_pid_ctr(void){
     spinlock_lock(&pid_ctr_lock);
 
     uint32_t pid = pid_counter++;
@@ -25,7 +26,7 @@ uint32_t incr_pid_ctr(){
     return pid;
 }
 
-struct task* create_task(){
+struct task* create_task(void){
     struct task *task = kmalloc(sizeof(struct task));
     if(!task)
         return NULL;
@@ -46,7 +47,6 @@ struct task* create_task(){
     
     memset(&task->cpu_context, 0, sizeof(task->cpu_context));
 
-    task->zombie = NULL;
     task->parent = NULL; // Will later be INIT when I end up making it
 
     list_init(&task->siblings); // When INIT is added this will just be the list of its children
@@ -76,6 +76,7 @@ struct task* create_kernel_task(void (*func)(void)) {
     }
 
     // Set up stack pointer at top of allocated stack
+    ktask->kernel_stack_base = stack; // Keep track of base so we know where to free later
     ktask->cpu_context.stack_ptr = ((uint64_t)stack + KERNEL_STACK_SIZE);
     ktask->cpu_context.rip = (uint64_t)func;
     ktask->cpu_context.rflags = 0x202;     // IF=1 + reserved bit
@@ -91,6 +92,64 @@ struct task* create_kernel_task(void (*func)(void)) {
     
     return ktask;
 }
+
+struct task* create_init_task(void (*func)(void)) {
+    struct task *init = create_task();
+    
+    if(!init)
+        return NULL;
+
+    // We need to allocate a kernel stack for this to work
+    void* stack = kmalloc(KERNEL_STACK_SIZE);
+    if (!stack){
+        kfree(init); // Clean up what we already allocated
+        return NULL;
+    }
+
+    // Set up stack pointer at top of allocated stack
+    init->cpu_context.stack_ptr = ((uint64_t)stack + KERNEL_STACK_SIZE);
+    init->cpu_context.rip = (uint64_t)func;
+    init->cpu_context.rflags = 0x202;     // IF=1 + reserved bit
+    init->cpu_context.cs = 0x28;          // Kernel code segment
+    init->cpu_context.ss = 0x30;          // Kernel data segment       
+
+    list_init(&init->tasks_runnable);
+    
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_add_tail(&init->tasks, &all_tasks); 
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+
+    return init;
+}
+
+void task_destroy(struct task* task) {
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_del(&task->tasks);        // Remove from global list
+    list_del(&task->siblings);     // Remove from parent's children
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+    
+    // Free if non kernel space task
+    if (task->md) 
+        mm_free(task->md);
+    
+    
+    if (task->kernel_stack_base)
+        kfree(task->kernel_stack_base); 
+    
+    kfree(task);
+}
+
+void task_add_child(struct task* parent, struct task* child){
+    if(child->parent != parent){
+        KERROR("Child parent isn't the same as provided parent, something might be NULL\n");
+        return;
+    }
+
+    list_add_tail(&child->siblings, &parent->children);
+}
+
 
 void set_task_state(struct task *task, uint8_t state){
     task->state = state;

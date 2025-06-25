@@ -8,12 +8,12 @@ struct list_node zombie_tasks;
 DEFINE_PER_CPU_GLOBAL(struct task*, current_task);
 DEFINE_PER_CPU_GLOBAL(struct list_node, cpu_runqueue);
 
-void scheduler_init(){
+void scheduler_init(void){
     list_init(&all_tasks);
     list_init(&zombie_tasks);
 }
 
-void scheduler_percpu_init(){
+void scheduler_percpu_init(void){
     list_init(&this_core_read(cpu_runqueue));
 }
 
@@ -32,12 +32,12 @@ void schedule_task(struct task* task) {
     list_add_tail(&task->tasks_runnable, &this_core_read(cpu_runqueue));
 }
 
-struct task* get_current_task(){
+struct task* get_current_task(void){
     return this_core_read(current_task);
 }
 
 extern spinlock task_list_lock;
-void schedule(){
+void schedule(void){
     struct task *current = this_core_read(current_task);
     struct task *next = NULL;
 

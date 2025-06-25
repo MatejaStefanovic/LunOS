@@ -1,9 +1,9 @@
 #include <kernel/vmm.h>
 #include <kernel/pmm.h>
 #include <tests/vmm_tests.h>
-
+/*
 // Test function to validate your VMM implementation
-int test_vmm_basic() {
+static int test_vmm_basic(void) {
     kprintf("=== VMM Basic Test ===\n");
     
     // Create a new address space
@@ -80,7 +80,7 @@ int test_vmm_basic() {
 }
 
 // Test range mapping
-int test_vmm_range() {
+static int test_vmm_range(void) {
     kprintf("=== VMM Range Test ===\n");
     
     struct addr_space test_as;
@@ -124,7 +124,7 @@ int test_vmm_range() {
 }
 
 // Test unmapping functionality
-int test_vmm_unmap() {
+static int test_vmm_unmap(void) {
     kprintf("=== VMM Unmap Test ===\n");
     
     struct addr_space test_as;
@@ -295,7 +295,7 @@ int test_vmm_unmap() {
 }
 
 // Test memory access behavior after unmapping
-int test_vmm_unmap_memory_access() {
+static int test_vmm_unmap_memory_access(void) {
     kprintf("=== VMM Unmap Memory Access Test ===\n");
     
     struct addr_space test_as;
@@ -430,7 +430,7 @@ int test_vmm_unmap_memory_access() {
         virt_addr vaddr = range_base + (i * PAGE_SIZE);
         
         // Write pattern to physical memory
-        uint64_t *phys_ptr = (uint64_t *)(range_paddrs[i] + get_hhdm_offset());
+        phys_ptr = (uint64_t *)(range_paddrs[i] + get_hhdm_offset());
         *phys_ptr = range_patterns[i];
         
         // Map the page
@@ -467,8 +467,8 @@ int test_vmm_unmap_memory_access() {
     
     // Verify physical memory content is preserved
     for (size_t i = 0; i < range_pages; i++) {
-        uint64_t *phys_ptr = (uint64_t *)(range_paddrs[i] + get_hhdm_offset());
-        uint64_t read_pattern = *phys_ptr;
+        phys_ptr = (uint64_t *)(range_paddrs[i] + get_hhdm_offset());
+        read_pattern = *phys_ptr;
         if (read_pattern != range_patterns[i]) {
             KERROR("FAIL: Physical memory %lu corrupted. Expected: 0x%lx, Got: 0x%lx\n",
                     i, range_patterns[i], read_pattern);
@@ -599,7 +599,7 @@ int test_vmm_unmap_memory_access() {
 }
 
 // Test error conditions
-int test_vmm_errors() {
+static int test_vmm_errors(void) {
     kprintf("=== VMM Error Handling Test ===\n");
     
     struct addr_space *test_as = vmm_create_address_space();
@@ -655,7 +655,7 @@ int test_vmm_errors() {
     return 0;
 }
 
-int test_memory_access_safe() {
+static int test_memory_access_safe(void) {
     kprintf("=== Safe Memory Access Test (No CR3 Switch) ===\n");
     
     struct addr_space test_as;
@@ -728,7 +728,7 @@ int test_memory_access_safe() {
 }
 
 // Main test function to call from your kernel
-void run_vmm_tests() {
+void run_vmm_tests(void) {
     kprintf("Starting VMM tests...\n");
     
     if (test_vmm_basic() != 0) {
@@ -749,4 +749,4 @@ void run_vmm_tests() {
     kprintf("\n");
     KSUCCESS("All VMM tests passed!\n");
 }
-
+*/

@@ -58,7 +58,7 @@ struct mem_region *mm_find_region(struct mem_descriptor *mm, virt_addr vaddr){
 }
 
 // Only for user space as kernel tasks will have NULL mem descriptor
-struct mem_descriptor *mm_alloc(){
+struct mem_descriptor *mm_alloc(void){
     struct mem_descriptor *mem_desc = kmalloc(sizeof(struct mem_descriptor));
     struct addr_space *as = vmm_create_address_space();
     
@@ -86,6 +86,7 @@ void mm_free(struct mem_descriptor *mm){
     struct mem_region *current = mm->regions;
     struct mem_region *next;
 
+    // TODO: this won't work later so I need to fix it 
     while (current) {
         next = current->next;
         kfree(current);
@@ -160,7 +161,7 @@ int mm_expand_heap(struct mem_descriptor *mm, virt_addr fault_addr) {
     return ret;
 }
 
-uint64_t err_code_to_access_flags(uint64_t error_code) {
+static uint64_t err_code_to_access_flags(uint64_t error_code) {
     uint64_t access_flags = 0;
     
     // Instr means it is an execute access

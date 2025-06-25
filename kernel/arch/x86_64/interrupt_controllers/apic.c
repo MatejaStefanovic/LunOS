@@ -8,12 +8,12 @@
 
 #include <string.h>
 
-volatile uint32_t *apic_base = NULL;
+static volatile uint32_t *apic_base = NULL;
 static uint32_t apic_timer_frequency = 0;
 DEFINE_PER_CPU_VOLATILE(uint64_t, timer_ticks);
 
 // For BSP use
-int apic_global_init() {
+int apic_global_init(void) {
     // Map APIC base - this only needs to be done once
     virt_addr apic_vaddr = 0xFFFFFF8000000000UL;
     uint64_t mmio_flags = PTE_PRESENT | PTE_WRITABLE | PTE_CACHE_DISABLE | PTE_WRITETHROUGH; 
@@ -81,12 +81,12 @@ int apic_timer_init_cpu(uint32_t cpu_id) {
 }
 
 extern void isr64(void);
-void apic_timer_register_handler() {
+void apic_timer_register_handler(void) {
     create_gate_entry(APIC_TIMER_VECTOR, isr64, 0x28, 0x8E);
 }
 
 // We use PIT to calibrate for better precision
-void apic_timer_calibrate() {
+void apic_timer_calibrate(void) {
     KSUCCESS("Calibrating APIC timer using PIT...\n");
     
     // Disable APIC timer during calibration
@@ -140,25 +140,25 @@ void apic_timer_set_frequency(uint32_t frequency) {
     apic_write(APIC_TIMER_INITIAL, initial_count);
     
 }
-void apic_timer_handler() {
+void apic_timer_handler(void) {
     apic_write(APIC_EOI, 0);
    
     schedule();
 }
 
-void apic_timer_enable() {
+void apic_timer_enable(void) {
     uint32_t lvt = apic_read(APIC_TIMER_LVT);
     lvt &= ~0x10000; // Clear mask bit
     apic_write(APIC_TIMER_LVT, lvt);
 }
 
-void apic_timer_disable() {
+void apic_timer_disable(void) {
     uint32_t lvt = apic_read(APIC_TIMER_LVT);
     lvt |= 0x10000; // Set mask bit
     apic_write(APIC_TIMER_LVT, lvt);
 }
 
 // Get current tick count
-uint64_t apic_timer_get_ticks() {
+uint64_t apic_timer_get_ticks(void) {
     return this_core_read(timer_ticks);
 }

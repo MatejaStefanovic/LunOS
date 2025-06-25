@@ -3,7 +3,7 @@
 
 #define SLAB_THRESHOLD 2048  // Use slab for allocations <= 2KB
 
-DEFINE_SPINLOCK(kmalloc_lock);
+static DEFINE_SPINLOCK(kmalloc_lock);
 
 void *kmalloc(size_t size) {
     if (!size) {
@@ -67,7 +67,7 @@ void *kmalloc(size_t size) {
     return (void *)start_of_data;
 }
 
-DEFINE_SPINLOCK(kfree_lock);
+static DEFINE_SPINLOCK(kfree_lock);
 
 void kfree(void *ptr){
     if(!ptr){
@@ -128,7 +128,7 @@ void kfree(void *ptr){
     spinlock_unlock_intrestore(&kfree_lock, flags);
 }
 
-uint64_t pmm_alloc_page(){
+uint64_t pmm_alloc_page(void){
     int_flags flags;
     spinlock_lock_intsave(&kmalloc_lock, &flags);
     uint64_t phys = buddy_alloc_page();

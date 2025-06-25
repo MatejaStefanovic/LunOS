@@ -26,7 +26,7 @@ static inline uint64_t get_cpu_cycles(void) {
 static uint64_t cpu_cycles_per_10ms = 0;
 
 // Try to use CPUID to get CPU frequency for best accuracy
-uint64_t get_cpu_frequency_mhz(void) {
+static uint64_t get_cpu_frequency_mhz(void) {
     uint32_t eax, ebx, ecx, edx;
     
     // Check if CPU frequency info is available
@@ -66,14 +66,14 @@ uint64_t get_cpu_frequency_mhz(void) {
 #define CMOS_ADDRESS 0x70
 #define CMOS_DATA 0x71
 
-uint8_t read_rtc_register(uint8_t reg) {
+static uint8_t read_rtc_register(uint8_t reg) {
     outb(CMOS_ADDRESS, reg);
     io_wait();
     return inb(CMOS_DATA);
 };
 
 // Method 2: Use Real Time Clock, less accurate than the CPUID method but still good
-void calibrate_with_rtc(void) {
+static void calibrate_with_rtc(void) {
     kprintf("Calibrating with RTC...\n");
     
     // Wait for RTC update to complete
@@ -106,7 +106,7 @@ void calibrate_with_rtc(void) {
             cycles_per_second, cpu_cycles_per_10ms);
 }
 
-void calibrate_with_known_frequencies(void) {
+static void calibrate_with_known_frequencies(void) {
     // Common CPU frequencies and their 10ms cycle counts
     struct {
         const char* description;
@@ -132,7 +132,7 @@ void calibrate_with_known_frequencies(void) {
 
 // We try it all here, if CPUID doesn't work we go to RTC and if that doesn't work
 // we're fucked
-void calibrate_cpu_timing(void) {
+static void calibrate_cpu_timing(void) {
     if (cpu_cycles_per_10ms != 0) // We already calibrated (somehow) 
         return;  
     
@@ -180,7 +180,7 @@ void cpu_wait_10ms(void) {
 }
 
 
-void test_timing_methods(void) {
+static void test_timing_methods(void) {
     kprintf("=== Comprehensive Timing Test ===\n");
     
     calibrate_cpu_timing();

@@ -16,7 +16,7 @@ static uint32_t terminal_fg_color;
 static uint32_t terminal_bg_color;
 static struct term_cell_t terminal_buffer[240*135];
 
-void get_screen_dimensions(){
+void get_screen_dimensions(void){
     struct limine_framebuffer *fb = fb_get();
     if(!fb)
         hcf();
@@ -52,7 +52,7 @@ void terminal_render(void) {
     }
 }
 
-void terminal_putentryat(struct term_cell_t c, size_t x, size_t y) {
+static void terminal_putentryat(struct term_cell_t c, size_t x, size_t y) {
     if (x >= total_columns || y >= total_rows) {
         return; 
     }

@@ -3,6 +3,7 @@
 
 #include <kernel/memmgr.h>
 #include <kernel/regs.h>
+#include <kernel/spinlock.h>
 #include <ds/lists.h>
 
 #define TASK_RUNNING 0x0
@@ -14,7 +15,15 @@
 #define TASK_ZOMBIE 0x6
 #define TASK_DEAD 0x7
 
+extern spinlock task_list_lock;
+
 struct task {
+    // MUST BE FIRST!!! The way we save 
+    // currently running task is by getting 
+    // a pointer to our __percpu_current_task[MAXCORES] 
+    // array in our ISR_STUBS and we need
+    // the offset of cpu context so the easiet
+    // way to do that is to always make it 0
     struct task_context cpu_context;
     
     uint32_t pid;   // Process ID - always unique
@@ -26,8 +35,8 @@ struct task {
 
     struct mem_descriptor *md;
 
+    void* kernel_stack_base;
     struct task *parent;
-    struct task *zombie;
 
     struct list_node children;
     struct list_node siblings;
@@ -43,6 +52,10 @@ struct task {
 // Task creation and initialization
 struct task* create_task(void);
 struct task* create_kernel_task(void (*func)(void));    
+struct task* create_init_task(void (*func)(void));
+
+void task_destroy(struct task* task);
+
 
 // Task scheduling and state management
 void set_task_state(struct task *task, uint8_t state);
@@ -54,7 +67,7 @@ void exit(int code);
 int waitpid(uint32_t pid, int *status);
 
 // Hierarchy and cleanup
-void add_child(struct task *parent, struct task *child);
+void task_add_child(struct task* parent, struct task* child);
 void cleanup_zombie(struct task *task);
 struct task* find_task_by_pid(uint32_t pid);
 

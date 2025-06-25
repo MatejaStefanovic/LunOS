@@ -5,9 +5,9 @@
 static struct page_table* current_pml4 = NULL;
 static uint64_t hhdm_offset;
 
-struct addr_space *kernel_as = NULL;
+static struct addr_space *kernel_as = NULL;
 
-static struct page_table* get_current_pml4(){
+static struct page_table* get_current_pml4(void){
     if(!current_pml4){
         phys_addr cr3 = get_cr3();
         // We need to see where out higher half direct mapping starts and we 
@@ -53,7 +53,7 @@ static void free_pdp_table(phys_addr pdp_phys) {
 }
 
 
-int vmm_init(){
+int vmm_init(void){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
 
@@ -75,7 +75,7 @@ int vmm_init(){
     return 0;
 }
 
-struct addr_space *vmm_create_address_space(){
+struct addr_space *vmm_create_address_space(void){
     struct addr_space *as = kmalloc(sizeof(struct addr_space));
     if(!as){
         KERROR("Couldn't allocate memory for an address space\n");
@@ -337,10 +337,10 @@ bool vmm_is_mapped(struct addr_space *as, virt_addr vaddr) {
     return vmm_virt_to_phys(as, vaddr) != 0;
 }
 
-struct addr_space *get_kernel_as(){
+struct addr_space *get_kernel_as(void){
     return kernel_as;
 }
-void test_vmm() {
+void test_vmm(void) {
     kprintf("Testing VMM...\n");
     
     // Create a new address space
