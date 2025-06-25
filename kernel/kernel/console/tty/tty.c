@@ -6,6 +6,7 @@
 #include <kernel/limine.h>
 #include <kernel/framebuffer.h>
 #include <kernel/halt.h>
+#include <kernel/spinlock.h>
 
 static uint16_t total_rows;
 static uint16_t total_columns;
@@ -13,15 +14,15 @@ static uint16_t current_row;
 static uint16_t current_column;
 static uint32_t terminal_fg_color;
 static uint32_t terminal_bg_color;
-static char terminal_buffer[240*135];
+static struct term_cell_t terminal_buffer[240*135];
 
-void get_screen_dimensions(){
+void get_screen_dimensions(void){
     struct limine_framebuffer *fb = fb_get();
     if(!fb)
         hcf();
     total_columns = fb->width / FONT_WIDTH;
     total_rows = fb->height / FONT_HEIGHT;
-    total_rows -= 10;
+    total_rows -= 20;
 }
 
 void terminal_initialize(uint32_t fg, uint32_t bg) {
@@ -29,13 +30,13 @@ void terminal_initialize(uint32_t fg, uint32_t bg) {
     current_row = 0;
     current_column = 0;
 
-    terminal_fg_color = fg; // White
-    terminal_bg_color = bg; // Black
-    
+    terminal_fg_color = fg;
+    terminal_bg_color = bg;
+
     size_t buffer_size = total_rows * total_columns;
     
     for (size_t i = 0; i < buffer_size; i++) {
-        terminal_buffer[i] = ' ';
+        terminal_buffer[i] = (struct term_cell_t){ .ch = ' ', .fg = fg, .bg = bg };
     }
     terminal_render();
 }
@@ -44,28 +45,28 @@ void terminal_render(void) {
     for (size_t y = 0; y < total_rows; y++) {
         for (size_t x = 0; x < total_columns; x++) {
             const size_t index = y * total_columns + x;
-            char ch = terminal_buffer[index];
+            struct term_cell_t cell = terminal_buffer[index];
             
-            fb_put_char(ch, x * FONT_WIDTH, y * FONT_HEIGHT, terminal_fg_color, terminal_bg_color);
+            fb_put_char(cell.ch, x * FONT_WIDTH, y * FONT_HEIGHT, cell.fg, cell.bg);
         }
     }
 }
 
-void terminal_putentryat(char c, size_t x, size_t y) {
+static void terminal_putentryat(struct term_cell_t c, size_t x, size_t y) {
     if (x >= total_columns || y >= total_rows) {
         return; 
     }
     const size_t index = y * total_columns + x;
     terminal_buffer[index] = c;
-    fb_put_char(c, x * FONT_WIDTH, y * FONT_HEIGHT, terminal_fg_color, terminal_bg_color);
+    fb_put_char(c.ch, x * FONT_WIDTH, y * FONT_HEIGHT, c.fg, c.bg);
 }
 
-void terminal_putchar(char c) {
-    if (c == '\n') {
+void terminal_putchar(struct term_cell_t c) {
+    if (c.ch == '\n') {
         terminal_newline();
         return;
     }
-    if (c == '\t') {
+    if (c.ch == '\t') {
         current_column += TAB_WIDTH - (current_column % TAB_WIDTH);
 
         if (current_column >= total_columns) {
@@ -98,12 +99,12 @@ void terminal_scroll(void) {
     memmove(
         terminal_buffer,
         terminal_buffer + total_columns,
-        (total_rows - 1) * total_columns * sizeof(char)
+        (total_rows - 1) * total_columns * sizeof(struct term_cell_t)
     );
     
     // Clear the last row
     for (size_t i = 0; i < total_columns; i++) {
-        terminal_buffer[(total_rows - 1) * total_columns + i] = ' ';
+        terminal_buffer[(total_rows - 1) * total_columns + i].ch = ' ';
     }
     
     current_row = total_rows - 1;
@@ -111,7 +112,9 @@ void terminal_scroll(void) {
 
 void terminal_write(const char* data, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        terminal_putchar(data[i]);
+        struct term_cell_t cell = (struct term_cell_t){ .ch = data[i], 
+            .fg = terminal_fg_color, .bg = terminal_bg_color }; 
+        terminal_putchar(cell);
     }
 }
 
@@ -121,9 +124,11 @@ void terminal_writestring(const char* data) {
 
 void terminal_clear(void) {
     size_t buffer_size = total_rows * total_columns;
-    
+        
     for (size_t i = 0; i < buffer_size; i++) {
-        terminal_buffer[i] = ' ';
+        terminal_buffer[i].ch = ' ';
+        terminal_buffer[i].fg = 0xFFFFFF;
+        terminal_buffer[i].bg = 0x000035;
     }
     
     current_row = 0;

@@ -39,9 +39,9 @@ extern void isr29(void);
 extern void isr30(void);
 extern void isr31(void);
 
+extern void build_iretq_frame(struct task_context*);
+
 void print_hex(uint32_t val);
-void isr_dispatch(struct regs_t *r);
-void isr0_divide_by_zero(struct regs_t *r);
-void isr14_page_fault();
+void isr_dispatch(struct interrupt_frame *fr);
 
 #endif

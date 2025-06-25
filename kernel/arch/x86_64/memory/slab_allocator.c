@@ -8,7 +8,7 @@ static size_t slab_sizes[] = {
 #define NUM_SLAB_SIZES (sizeof(slab_sizes) / sizeof(slab_sizes[0]))
 static struct slab_cache slab_caches[NUM_SLAB_SIZES];
 
-void slab_allocator_init(){
+void slab_allocator_init(void){
     kprintf("Initializing slab allocator...\n");
     
     for(size_t i = 0; i < NUM_SLAB_SIZES; i++){ 

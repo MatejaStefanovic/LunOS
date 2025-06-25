@@ -4,8 +4,8 @@
 #include <kernel/klogging.h>
 #include <string.h>
 
-struct idt_entry_t idt[IDT_SIZE];
-struct idt_ptr idtr;
+static struct idt_entry_t idt[IDT_SIZE];
+static struct idt_ptr idtr;
 
 void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector, uint8_t attributes){
     uint64_t handler_addr = (uint64_t)handler;
@@ -19,7 +19,7 @@ void create_gate_entry(uint8_t entry_index, isr_t handler, uint16_t seg_selector
     idt[entry_index].reserved = 0;
 }
 
-void init_idt(){ 
+void init_idt(void){ 
     kprintf("Initializing Interrupt table...\n");
     
     idtr.limit = sizeof(idt)-1;
@@ -62,8 +62,13 @@ void init_idt(){
     create_gate_entry(29, isr29, 0x28, 0x8E);
     create_gate_entry(30, isr30, 0x28, 0x8E);
     create_gate_entry(31, isr31, 0x28, 0x8E);
-
+    
     setIdt(idtr.limit, idtr.base);
 
     KSUCCESS("Interrupt setup was successfull\n");  
 }
+
+void reload_idt(void) {
+    setIdt(idtr.limit, idtr.base);
+}
+

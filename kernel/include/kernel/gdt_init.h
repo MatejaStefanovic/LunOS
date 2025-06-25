@@ -25,7 +25,7 @@ struct gdt_entry_t{
 
 struct gdt_ptr{
     uint16_t limit; // size of GDT - 1
-    uint32_t base;  // address of the first entry
+    uint64_t base;  // address of the first entry
 } __attribute__((packed));
 
 // Refer to intel manual for IA32 vol 3A chapter 7.2
