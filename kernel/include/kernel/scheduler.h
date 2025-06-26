@@ -6,14 +6,15 @@
 #include <kernel/smp.h>
 
 extern struct list_node all_tasks;
-extern struct list_node zombie_tasks; 
 
 DECLARE_PER_CPU(struct list_node, cpu_runqueue);
 DECLARE_PER_CPU(struct task*, current_task);
 
 void scheduler_init(void);
 void scheduler_percpu_init(void);
-void schedule_task(struct task* t);
+void sched_task(struct task* t);
+void sched_remove_task(struct task* t);
+
 void run_task(struct task* t);
 void schedule(void);
 

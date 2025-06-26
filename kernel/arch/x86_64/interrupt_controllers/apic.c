@@ -82,7 +82,7 @@ int apic_timer_init_cpu(uint32_t cpu_id) {
 
 extern void isr64(void);
 void apic_timer_register_handler(void) {
-    create_gate_entry(APIC_TIMER_VECTOR, isr64, 0x28, 0x8E);
+    create_gate_entry(APIC_TIMER_VECTOR, isr64, 0x08, 0x8E);
 }
 
 // We use PIT to calibrate for better precision

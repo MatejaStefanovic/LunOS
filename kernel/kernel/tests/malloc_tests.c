@@ -1,9 +1,11 @@
+#include <tests/malloc_tests.h>
 #include <kernel/pmm.h>
 #include <kernel/klogging.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-/*
+
+
 static void test_basic_allocation(void) {
     kprintf("=== Basic Allocation Test ===\n");
     
@@ -396,7 +398,7 @@ static void test_alignment_and_boundaries(void) {
     kprintf("Alignment and boundary test completed\n");
 }
 
-static int run_kmalloc_tests(void) {
+int run_kmalloc_tests(void) {
     kprintf("Starting enhanced kmalloc/kfree test suite\n");
     kprintf("Testing both functionality and stress scenarios\n\n");
     
@@ -876,4 +878,3 @@ int run_advanced_kmalloc_tests(void) {
     
     return 0;
 }
-*/

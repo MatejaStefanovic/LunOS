@@ -105,8 +105,7 @@ isr_common_stub:
     movq 24(%rsp), %rcx     # Get CS from stack
     movq %rcx, 128(%rax)
 
-
-    test $0x3, %rcx
+    test $3, %rcx
     jne user_mode_interrupt
 
     # Stack layout right now:
@@ -128,7 +127,7 @@ isr_common_stub:
     
     movq 40(%rsp), %rcx 
     movq %rcx, 144(%rax)    # RSP
-    movq $0x30, 152(%rax)   # SS for kernel is 0x30
+    movq $0x10, 152(%rax)   # SS for kernel is 0x30
 
     # What we need to do now have only the values 
     # we want as our interrupt frame on the stack
@@ -154,5 +153,4 @@ isr_common_stub:
     
 
 user_mode_interrupt:
-
-    
+    call print_check 

@@ -1,4 +1,5 @@
 #include <kernel/smp.h>
+#include <kernel/gdt_init.h>
 #include <kernel/idt_init.h>
 #include <kernel/apic.h>
 #include <kernel/memutils.h>
@@ -38,8 +39,8 @@ static void func(void){
 static void boot_idle_task(void){ 
     struct task *task1 = create_and_schedule_kernel_task(func); 
     struct task *task2 = create_and_schedule_kernel_task(func); 
-    apic_timer_enable();
 
+    apic_timer_enable();
     while(1) {
             kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
             for(volatile int i = 0; i < 100000000; i++); // Simple delay
@@ -47,6 +48,7 @@ static void boot_idle_task(void){
 }
 
 static void ap_entry_point(struct limine_smp_info *cpu_info) {
+    init_gdt();
     reload_idt();
     
     init_percpu_data(cpu_info->processor_id); 
@@ -89,12 +91,10 @@ void smp_init(void) {
             scheduler_percpu_init();
             continue; // Skip BSP
         }
-
         kprintf("Starting CPU %lu (LAPIC ID: %u)\n", i, cpu->lapic_id);
         cpu->goto_address = ap_entry_point;
     }
     
-    struct task *idle_task = create_and_schedule_kernel_task(boot_idle_task); 
-
+    struct task *idle_task = create_and_schedule_kernel_task(boot_idle_task);  
     run_kernel_task(idle_task);
 }
