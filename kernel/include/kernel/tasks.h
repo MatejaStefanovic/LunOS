@@ -29,6 +29,7 @@ struct task {
     uint32_t pid;   // Process ID - always unique
     uint32_t tgid;  // Thread Group ID - used to see if thread belongs to process  
 
+    int cpu_id;
     // From 0 to 100 with 0 being the highest priority
     int priority;
     uint8_t state;

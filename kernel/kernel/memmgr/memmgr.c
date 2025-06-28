@@ -86,7 +86,6 @@ void mm_free(struct mem_descriptor *mm){
     struct mem_region *current = mm->regions;
     struct mem_region *next;
 
-    // TODO: this won't work later so I need to fix it 
     while (current) {
         next = current->next;
         kfree(current);

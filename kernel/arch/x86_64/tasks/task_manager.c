@@ -1,8 +1,35 @@
 #include <kernel/task_manager.h>
 
+DEFINE_PER_CPU(int, task_counter);
+DEFINE_SPINLOCK(task_counter_lock);
+extern int total_cpus;
+
+void init_task_ctr(int cpu_count){
+    for(int i = 0; i < cpu_count; i++)
+        __percpu_task_counter[i] = 0;
+}
+
+static int find_least_busy_cpu(void){
+    int id = 0;
+
+    spinlock_lock(&task_counter_lock); 
+    int min = __percpu_task_counter[0];
+    for(int i = 1; i < 4; i++){
+        if(__percpu_task_counter[i] < min){
+            min = __percpu_task_counter[i];
+            id = i;
+        }
+    }
+    __percpu_task_counter[id] += 1;
+    spinlock_unlock(&task_counter_lock);
+
+    return id;
+}
+
 struct task* create_and_schedule_kernel_task(void (*func)(void)){
     struct task* t = create_kernel_task(func);
-    sched_task(t);
+    int id = find_least_busy_cpu();
+    sched_task(t, id);
     return t;
 }
 

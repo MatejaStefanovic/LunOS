@@ -3,6 +3,8 @@
 
 #include <kernel/limine_requests.h>
 
+extern int total_cpus;
+
 #define MAX_CORES 8
 
 #define DECLARE_PER_CPU(type, name) \

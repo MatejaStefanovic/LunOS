@@ -141,6 +141,13 @@ isr_common_stub:
     popq %rcx # now CS 
     popq %rcx # now rflags 
 
+    # Check stack alignment (System V ABI requirement)
+    test $15, %rsp
+    jnz will_be_aligned_after_push
+    subq $8, %rsp
+
+will_be_aligned_after_push:
+    
     # The stack is now empty, we need to push back int_no and err_code 
     pushq %rbx # Push error_code 
     pushq %rax # Push int_no
