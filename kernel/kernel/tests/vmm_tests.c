@@ -1,7 +1,6 @@
 #include <kernel/vmm.h>
 #include <kernel/pmm.h>
 #include <tests/vmm_tests.h>
-/*
 // Test function to validate your VMM implementation
 static int test_vmm_basic(void) {
     kprintf("=== VMM Basic Test ===\n");
@@ -749,4 +748,3 @@ void run_vmm_tests(void) {
     kprintf("\n");
     KSUCCESS("All VMM tests passed!\n");
 }
-*/

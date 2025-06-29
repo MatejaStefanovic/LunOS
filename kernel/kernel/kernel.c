@@ -1,3 +1,4 @@
+#include <kernel/gdt_init.h>
 #include <kernel/idt_init.h>
 #include <kernel/framebuffer.h>
 #include <kernel/tty.h>
@@ -17,7 +18,6 @@ __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(3);
 
 void _start(void);
-
 void _start(void) {
     if(!LIMINE_BASE_REVISION_SUPPORTED) {
         hcf();
@@ -28,7 +28,8 @@ void _start(void) {
     fb_clear(0x000000);  // Clear to black
     terminal_initialize(0xFFFFFF, 0x000035);
     KSUCCESS("Terminal initialized properly\n");
-    
+
+    init_gdt();
     init_idt();
 
     buddy_allocator_init();
@@ -42,10 +43,9 @@ void _start(void) {
     apic_global_init();
     apic_timer_register_handler();
     reload_idt();
-
-
-    scheduler_init();
     
+    scheduler_init();
+ 
     smp_init(); 
     
     while(1)

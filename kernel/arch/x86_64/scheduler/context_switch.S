@@ -17,8 +17,6 @@ load_next_task:
     movq 104(%rdi), %rbx 
     movq 112(%rdi), %rax
 
-    movq 144(%rdi), %rsp # Stack ptr of the task
-
     pushq 152(%rdi) # SS - if needed
     pushq 144(%rdi) # RSP - if needed
     pushq 136(%rdi) # RFLAGS    
@@ -39,3 +37,4 @@ build_iretq_frame:
     pushq 120(%rdi) # RIP     
     
     iretq
+

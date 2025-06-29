@@ -1,28 +1,21 @@
-.section .data
-gdtr:
-    .word 0
-    .long 0
-
 .section .text
-.globl setGdt
-.globl reloadSegments
+.global reload_gdt
+.type reload_gdt, @function
 
-setGdt:
-    movw 4(%esp), %ax
-    movw %ax, gdtr
-    movl 8(%esp), %eax
-    movl %eax, gdtr+2
-    lgdt gdtr
-    ret
+reload_gdt:
+    lgdt (gdtr)
 
-reloadSegments:
-    ljmp $0x08, $reload_CS
+    pushq $0x08
+    lea 1f(%rip), %rax
+    pushq %rax
+    lretq                        # Far return to set CS
 
-reload_CS:
-    movw $0x10, %ax
-    movw %ax, %ds
-    movw %ax, %es
-    movw %ax, %fs
-    movw %ax, %gs
-    movw %ax, %ss
+1:
+    mov $0x10, %eax
+    mov %eax, %ds
+    mov %eax, %es
+    mov %eax, %ss
+    mov %eax, %fs
+    mov %eax, %gs
+
     ret

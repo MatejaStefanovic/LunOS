@@ -49,10 +49,10 @@ struct task* create_task(void){
 
     task->parent = NULL; // Will later be INIT when I end up making it
 
-    list_init(&task->siblings); // When INIT is added this will just be the list of its children
+    list_init(&task->sibling);
     list_init(&task->children);
-    list_init(&task->zombie_list);
-
+    list_init(&task->zombie_sibling);
+    list_init(&task->zombie_children);
 
     task->exit_code = 0;
     task->exit_signal = 0;
@@ -62,7 +62,6 @@ struct task* create_task(void){
 
 #define KERNEL_STACK_SIZE 4*PAGE_SIZE
 struct task* create_kernel_task(void (*func)(void)) {
-    
     struct task *ktask = create_task();
     
     if(!ktask)
@@ -80,8 +79,8 @@ struct task* create_kernel_task(void (*func)(void)) {
     ktask->cpu_context.stack_ptr = ((uint64_t)stack + KERNEL_STACK_SIZE);
     ktask->cpu_context.rip = (uint64_t)func;
     ktask->cpu_context.rflags = 0x202;     // IF=1 + reserved bit
-    ktask->cpu_context.cs = 0x28;          // Kernel code segment
-    ktask->cpu_context.ss = 0x30;          // Kernel data segment       
+    ktask->cpu_context.cs = 0x08;          // Kernel code segment
+    ktask->cpu_context.ss = 0x10;          // Kernel data segment       
 
     list_init(&ktask->tasks_runnable);
     
@@ -93,47 +92,16 @@ struct task* create_kernel_task(void (*func)(void)) {
     return ktask;
 }
 
-struct task* create_init_task(void (*func)(void)) {
-    struct task *init = create_task();
-    
-    if(!init)
-        return NULL;
-
-    // We need to allocate a kernel stack for this to work
-    void* stack = kmalloc(KERNEL_STACK_SIZE);
-    if (!stack){
-        kfree(init); // Clean up what we already allocated
-        return NULL;
-    }
-
-    // Set up stack pointer at top of allocated stack
-    init->cpu_context.stack_ptr = ((uint64_t)stack + KERNEL_STACK_SIZE);
-    init->cpu_context.rip = (uint64_t)func;
-    init->cpu_context.rflags = 0x202;     // IF=1 + reserved bit
-    init->cpu_context.cs = 0x28;          // Kernel code segment
-    init->cpu_context.ss = 0x30;          // Kernel data segment       
-
-    list_init(&init->tasks_runnable);
-    
-    int_flags flags;
-    spinlock_lock_intsave(&task_list_lock, &flags);
-    list_add_tail(&init->tasks, &all_tasks); 
-    spinlock_unlock_intrestore(&task_list_lock, flags);
-
-    return init;
-}
-
 void task_destroy(struct task* task) {
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
     list_del(&task->tasks);        // Remove from global list
-    list_del(&task->siblings);     // Remove from parent's children
+    list_del(&task->sibling);     // Remove from parent's children
     spinlock_unlock_intrestore(&task_list_lock, flags);
     
     // Free if non kernel space task
     if (task->md) 
         mm_free(task->md);
-    
     
     if (task->kernel_stack_base)
         kfree(task->kernel_stack_base); 
@@ -143,22 +111,64 @@ void task_destroy(struct task* task) {
 
 void task_add_child(struct task* parent, struct task* child){
     if(child->parent != parent){
-        KERROR("Child parent isn't the same as provided parent, something might be NULL\n");
+        KERROR("Child's parent isn't the same as provided parent, something might be NULL\n");
         return;
     }
 
-    list_add_tail(&child->siblings, &parent->children);
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_add_tail(&child->sibling, &parent->children);
+    spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
+void task_remove_child(struct task* parent, struct task* child){
+    if(child->parent != parent){
+        KERROR("Child's parent isn't the same as provided parent, something might be NULL\n");
+        return;
+    }
 
-void set_task_state(struct task *task, uint8_t state){
-    task->state = state;
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_del(&child->sibling);
+    spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
-void wake_up_task(struct task *task){
-    task->state = TASK_RUNNING;
+void task_add_zombie(struct task* parent, struct task* zombie){
+    if(zombie->parent != parent){
+        KERROR("Zombie's parent isn't the same as provided parent, something might be NULL\n");
+        return;
+    }
+
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_del(&zombie->sibling); // Remove from parent's children
+    list_add_tail(&zombie->zombie_sibling, &parent->zombie_children); // Add to zombie children
+    spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
-void send_signal(struct task *task, int signal){
-    task->exit_signal = signal;
-} 
+void task_remove_zombie(struct task* parent, struct task* zombie){
+    if(zombie->parent != parent){
+        KERROR("Zombie's parent isn't the same as provided parent, something might be NULL\n");
+        return;
+    }
+
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_del(&zombie->zombie_sibling);
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+}
+
+void task_orphan_children(struct task* dead_parent){
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    for(struct list_node* node = dead_parent->children.next; node != &dead_parent->children;){
+        struct list_node* node_to_remove = node; 
+        node = node->next;
+        struct task* child = container_of(node_to_remove, struct task, sibling);
+        //child->parent = init; // Don't have init yet
+        list_del(node_to_remove); 
+        //list_add_tail(child->siblings, init->children); // Don't have init
+    }
+
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+}

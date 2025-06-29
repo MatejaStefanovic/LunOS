@@ -43,5 +43,6 @@ extern void build_iretq_frame(struct task_context*);
 
 void print_hex(uint32_t val);
 void isr_dispatch(struct interrupt_frame *fr);
+void print_check(void);
 
 #endif

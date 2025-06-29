@@ -105,8 +105,7 @@ isr_common_stub:
     movq 24(%rsp), %rcx     # Get CS from stack
     movq %rcx, 128(%rax)
 
-
-    test $0x3, %rcx
+    test $3, %rcx
     jne user_mode_interrupt
 
     # Stack layout right now:
@@ -128,7 +127,7 @@ isr_common_stub:
     
     movq 40(%rsp), %rcx 
     movq %rcx, 144(%rax)    # RSP
-    movq $0x30, 152(%rax)   # SS for kernel is 0x30
+    movq $0x10, 152(%rax)   # SS for kernel is 0x30
 
     # What we need to do now have only the values 
     # we want as our interrupt frame on the stack
@@ -142,6 +141,13 @@ isr_common_stub:
     popq %rcx # now CS 
     popq %rcx # now rflags 
 
+    # Check stack alignment (System V ABI requirement)
+    test $15, %rsp
+    jnz will_be_aligned_after_push
+    subq $8, %rsp
+
+will_be_aligned_after_push:
+    
     # The stack is now empty, we need to push back int_no and err_code 
     pushq %rbx # Push error_code 
     pushq %rax # Push int_no
@@ -154,5 +160,4 @@ isr_common_stub:
     
 
 user_mode_interrupt:
-
-    
+    call print_check 

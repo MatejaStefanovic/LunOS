@@ -53,6 +53,10 @@ static void isr_reserved(void){
     kprintf("ISR is reserved by INTEL!? How are we even here\n");
 }
 
+void print_check(void){
+    kprintf("THEORY CONFIRMED BOYS!\n");
+    while(1);
+}
 
 void isr_dispatch(struct interrupt_frame *fr){
     switch (fr->int_no){
