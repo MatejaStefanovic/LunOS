@@ -1,10 +1,12 @@
+#include <tests/malloc_tests.h>
 #include <kernel/pmm.h>
 #include <kernel/klogging.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 
-void test_basic_allocation(void) {
+
+static void test_basic_allocation(void) {
     kprintf("=== Basic Allocation Test ===\n");
     
     // Test small allocation
@@ -38,7 +40,7 @@ void test_basic_allocation(void) {
     }
 }
 
-void test_multiple_allocations(void) {
+static void test_multiple_allocations(void) {
     kprintf("=== Multiple Allocations Test ===\n");
     
     void *ptrs[10];
@@ -61,7 +63,7 @@ void test_multiple_allocations(void) {
     }
 }
 
-void test_zero_and_null(void) {
+static void test_zero_and_null(void) {
     kprintf("=== Zero/NULL Test ===\n");
     
     // Test zero allocation
@@ -77,7 +79,7 @@ void test_zero_and_null(void) {
     kprintf("kfree(NULL) completed (should be safe)\n");
 }
 
-void test_large_allocations(void) {
+static void test_large_allocations(void) {
     kprintf("=== Large Allocation Test ===\n");
     
     size_t sizes[] = {8192, 16384, 32768, 65536, 131072};
@@ -99,7 +101,7 @@ void test_large_allocations(void) {
     }
 }
 
-void test_fragmentation(void) {
+static void test_fragmentation(void) {
     kprintf("=== Fragmentation Test ===\n");
     
     void *ptrs[20];
@@ -139,7 +141,7 @@ void test_fragmentation(void) {
     }
 }
 
-void test_stress_many_allocations(void) {
+static void test_stress_many_allocations(void) {
     kprintf("=== Stress Test: Many Allocations ===\n");
     
     #define STRESS_ALLOC_COUNT 1000
@@ -195,7 +197,7 @@ void test_stress_many_allocations(void) {
     kprintf("Stress test completed: freed all %lu blocks\n", successful_allocs);
 }
 
-void test_stress_random_sizes(void) {
+static void test_stress_random_sizes(void) {
     kprintf("=== Stress Test: Random Sizes ===\n");
     
     #define RANDOM_ALLOC_COUNT 500
@@ -239,7 +241,7 @@ void test_stress_random_sizes(void) {
     kprintf("Random size stress test completed\n");
 }
 
-void test_stress_alloc_free_cycles(void) {
+static void test_stress_alloc_free_cycles(void) {
     kprintf("=== Stress Test: Allocation/Free Cycles ===\n");
     
     #define CYCLE_COUNT 100
@@ -272,7 +274,7 @@ void test_stress_alloc_free_cycles(void) {
     kprintf("Allocation/free cycle stress test completed\n");
 }
 
-void test_stress_mixed_sizes(void) {
+static void test_stress_mixed_sizes(void) {
     kprintf("=== Stress Test: Mixed Small/Large Allocations ===\n");
     
     #define MIXED_COUNT 200
@@ -314,7 +316,7 @@ void test_stress_mixed_sizes(void) {
     kprintf("Mixed size stress test completed\n");
 }
 
-void test_stress_memory_intensive(void) {
+static void test_stress_memory_intensive(void) {
     kprintf("=== Stress Test: Memory Intensive ===\n");
     
     // Try to allocate large chunks until we fail
@@ -361,7 +363,7 @@ void test_stress_memory_intensive(void) {
     kprintf("Memory intensive stress test completed\n");
 }
 
-void test_alignment_and_boundaries(void) {
+static void test_alignment_and_boundaries(void) {
     kprintf("=== Alignment and Boundary Test ===\n");
     
     // Test various sizes around common boundaries
@@ -434,7 +436,7 @@ static size_t allocation_count = 0;
 static size_t free_count = 0;
 
 // Memory tracking wrappers
-void *tracked_kmalloc(size_t size) {
+static void *tracked_kmalloc(size_t size) {
     void *ptr = kmalloc(size);
     if (ptr) {
         total_allocated += size;
@@ -447,7 +449,7 @@ void *tracked_kmalloc(size_t size) {
     return ptr;
 }
 
-void tracked_kfree(void *ptr, size_t size) {
+static void tracked_kfree(void *ptr, size_t size) {
     if (ptr) {
         kfree(ptr);
         total_freed += size;
@@ -456,7 +458,7 @@ void tracked_kfree(void *ptr, size_t size) {
     }
 }
 
-void reset_memory_tracking(void) {
+static void reset_memory_tracking(void) {
     total_allocated = 0;
     total_freed = 0;
     peak_usage = 0;
@@ -465,7 +467,7 @@ void reset_memory_tracking(void) {
     free_count = 0;
 }
 
-void print_memory_stats(void) {
+static void print_memory_stats(void) {
     kprintf("=== Memory Statistics ===\n");
     kprintf("Total allocated: %lu bytes (%lu allocations)\n", total_allocated, allocation_count);
     kprintf("Total freed: %lu bytes (%lu frees)\n", total_freed, free_count);
@@ -475,7 +477,7 @@ void print_memory_stats(void) {
     kprintf("Allocation/Free balance: %lu\n", (long)(allocation_count - free_count));
 }
 
-void test_memory_leak_detection(void) {
+static void test_memory_leak_detection(void) {
     kprintf("=== Memory Leak Detection Test ===\n");
     
     reset_memory_tracking();
@@ -513,7 +515,7 @@ void test_memory_leak_detection(void) {
 }
 
 
-void test_use_after_free_detection(void) {
+static void test_use_after_free_detection(void) {
     kprintf("=== Use After Free Detection Test ===\n");
     kprintf("WARNING: This test demonstrates dangerous behavior\n");
     
@@ -538,7 +540,7 @@ void test_use_after_free_detection(void) {
     }
 }
 
-void test_buffer_overflow_detection(void) {
+static void test_buffer_overflow_detection(void) {
     kprintf("=== Buffer Overflow Detection Test ===\n");
     kprintf("Testing writes beyond allocated boundaries\n");
     
@@ -558,7 +560,7 @@ void test_buffer_overflow_detection(void) {
     }
 }
 
-void test_extreme_sizes(void) {
+static void test_extreme_sizes(void) {
     kprintf("=== Extreme Size Test ===\n");
     
     // Test very large allocations
@@ -580,7 +582,7 @@ void test_extreme_sizes(void) {
     }
 }
 
-void test_integer_overflow_protection(void) {
+static void test_integer_overflow_protection(void) {
     kprintf("=== Integer Overflow Protection Test ===\n");
     
     // Test sizes that might cause integer overflow in calculations
@@ -606,7 +608,7 @@ void test_integer_overflow_protection(void) {
     }
 }
 
-void test_long_running_stability(void) {
+static void test_long_running_stability(void) {
     kprintf("=== Long Running Stability Test ===\n");
     kprintf("Running extended allocation/free cycles...\n");
     
@@ -666,7 +668,7 @@ void test_long_running_stability(void) {
     kprintf("Long running stability test completed\n");
 }
 
-void test_pathological_fragmentation(void) {
+static void test_pathological_fragmentation(void) {
     kprintf("=== Pathological Fragmentation Test ===\n");
     
     #define FRAG_BLOCKS 1000
@@ -723,7 +725,7 @@ void test_pathological_fragmentation(void) {
     kprintf("Pathological fragmentation test completed\n");
 }
 
-void test_concurrent_simulation(void) {
+static void test_concurrent_simulation(void) {
     kprintf("=== Concurrent Access Simulation Test ===\n");
     kprintf("Simulating concurrent allocator access patterns\n");
     
@@ -788,7 +790,7 @@ void test_concurrent_simulation(void) {
     kprintf("Concurrent simulation test completed\n");
 }
 
-void test_error_path_handling(void) {
+static void test_error_path_handling(void) {
     kprintf("=== Error Path Handling Test ===\n");
     
     // Test allocation failure scenarios
@@ -834,7 +836,8 @@ void test_error_path_handling(void) {
         kprintf("WARNING: Recovery allocation failed\n");
     }
 }
-void test_double_free_detection(void) {
+
+static void test_double_free_detection(void) {
     kprintf("=== Double Free Detection Test ===\n");
     kprintf("WARNING: This test may crash if double-free protection is not implemented\n");
     

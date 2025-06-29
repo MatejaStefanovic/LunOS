@@ -2,70 +2,62 @@
 #define __KERNEL_GDT_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define NUM_OF_ENTRIES 6
 
-#define GDT_ENTRY_NULL      0
-#define GDT_ENTRY_KCODE     1
-#define GDT_ENTRY_KDATA     2
-#define GDT_ENTRY_UCODE     3
-#define GDT_ENTRY_UDATA     4
-#define GDT_ENTRY_TSS       5
-
-// Reminder, intel manual has GDT segement descriptor structure at 
-// vol 3 ch 3 or refer to osdev GDT page
-struct gdt_entry_t{
+// Standard GDT entry (8 bytes)
+struct gdt_entry {
     uint16_t limit_lower;
     uint16_t base_lower;
     uint8_t base_middle;
-    uint8_t access; // Access bits
-    uint8_t granularity; // granularity as well as 4 bits for seg limit to total 20
-    uint8_t base_high;    
+    uint8_t access;
+    uint8_t granularity;
+    uint8_t base_higher;    
 } __attribute__((packed));
 
-struct gdt_ptr{
-    uint16_t limit; // size of GDT - 1
-    uint32_t base;  // address of the first entry
+struct tss_descriptor {
+    uint16_t limit_lower;
+    uint16_t base_lower;
+    uint8_t base_middle;
+    uint8_t access;       
+    uint8_t granularity;
+    uint8_t base_high;
+    uint32_t base_upper;  // Upper 32 bits of base (64-bit only)
+    uint32_t reserved;    // Must be zero
 } __attribute__((packed));
 
-// Refer to intel manual for IA32 vol 3A chapter 7.2
-struct tss_entry_t{
-     uint32_t previous_task_link; // Bits 16-31 are reserved
-     uint32_t esp0;
-     uint32_t ss0; // Bits 16-31 are reserved
-     uint32_t esp1;
-     uint32_t ss1; // Bits 16-31 are reserved
-     uint32_t esp2;
-     uint32_t ss2; // Bits 16-31 are reserved
-     uint32_t cr3;
-     uint32_t eip;
-     uint32_t eflags;
-     uint32_t eax;
-     uint32_t ecx;
-     uint32_t edx;
-     uint32_t ebx;
-     uint32_t esp;
-     uint32_t ebp;
-     uint32_t esi;
-     uint32_t edi;
-     uint32_t es; // Bits 16-31 are reserved
-     uint32_t cs; // Bits 16-31 are reserved
-     uint32_t ss; // Bits 16-31 are reserved
-     uint32_t ds; // Bits 16-31 are reserved
-     uint32_t fs; // Bits 16-31 are reserved
-     uint32_t gs; // Bits 16-31 are reserved
-     uint32_t ldt_seg_selector;
-     uint16_t trap; // Only the first bit is used for debug trap flag, rest are reserved
-     uint16_t iomap_base_addr;
+struct gdt_ptr {
+    uint16_t limit;
+    uint64_t base;
 } __attribute__((packed));
 
-extern struct tss_entry_t tss;
+extern struct gdt_ptr gdtr;
 
-extern void setGdt(uint16_t limit, uint32_t base);
-extern void reloadSegments(void);
+struct task_state_seg {
+    uint32_t reserved1;
+    uint64_t rsp0;          // ring 0 stack ptr
+    uint64_t rsp1;          // ring 1 stack ptr
+    uint64_t rsp2;
+    uint64_t reserved2;
+    uint64_t ist1;          // Interrupt Stack Table entries
+    uint64_t ist2;
+    uint64_t ist3;
+    uint64_t ist4;
+    uint64_t ist5;
+    uint64_t ist6;
+    uint64_t ist7;
+    uint64_t reserved3;
+    uint16_t reserved4;
+    uint16_t iomap_base;  // I/O map base address
+} __attribute__((packed));
 
-void set_gdt_entry(int index, uint32_t base, uint32_t limit , uint8_t access, uint8_t granularity);
-void create_tss_entry(void);
+struct global_descr_table {
+    struct gdt_entry entries[5];
+    struct tss_descriptor tss_desc;
+} __attribute__((packed));
+
+extern void reload_gdt(void);
 void init_gdt(void);
 
 #endif

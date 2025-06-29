@@ -10,7 +10,7 @@ PREFIX?=/usr/local
 EXEC_PREFIX?=$(PREFIX)
 BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -g
 CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
@@ -58,6 +58,10 @@ $(ARCHDIR)/boot/crt/crtbegin.o $(ARCHDIR)/boot/crt/crtend.o:
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
+clean:
+	rm -f LunOS.kernel
+	rm -f $(OBJS) *.o */*.o */*/*.o
+	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
 
 install: install-headers install-kernel
 

@@ -8,16 +8,16 @@
 #include <kernel/limine_requests.h>
 #include <kernel/halt.h>
 
-typedef uint64_t pte_t; 
-typedef uint64_t vaddr_t;
-typedef uint64_t paddr_t;
+typedef uint64_t page_table_entry; 
+typedef uint64_t virt_addr;
+typedef uint64_t phys_addr;
 
-static inline void set_cr3(paddr_t pml4_phys) {
+static inline void set_cr3(phys_addr pml4_phys) {
     __asm__ volatile("mov %0, %%cr3" :: "r"(pml4_phys) : "memory");
 }
 
-static inline paddr_t get_cr3(void) {
-    paddr_t cr3;
+static inline phys_addr get_cr3(void) {
+    phys_addr cr3;
     __asm__ volatile("mov %%cr3, %0" : "=r"(cr3));
     return cr3;
 }

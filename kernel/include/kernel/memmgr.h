@@ -29,48 +29,49 @@
 #define RP_STACK    (1 << 4)  // Special stack region
 #define RP_SHARED   (1 << 5)  // Shared between processes
 
-struct mem_region_t{
-    vaddr_t start;
-    vaddr_t end;
+struct mem_region{
+    virt_addr start;
+    virt_addr end;
     uint64_t flags;
-    struct mem_region_t* next;
+    struct mem_region* next;
 };
 
-struct mem_descriptor_t{
-    struct addr_space_t *as;
+struct mem_descriptor{
+    struct addr_space *as;
     // Regions such as text, data, stack, heap sections and others (linked list)
-    struct mem_region_t *regions; 
+    struct mem_region *regions; 
 
-    vaddr_t brk;
-    vaddr_t mmap_base;
+    virt_addr brk;
+    virt_addr mmap_base;
 
     uint64_t total_vm;
     uint64_t rss; // Resident set size (how many pages in RAM the task has)
 };
 
-struct mem_descriptor_t* mm_alloc(void);
-void mm_free(struct mem_descriptor_t *mm);
-struct mem_descriptor_t* mm_copy(struct mem_descriptor_t *old_mm);  // for fork()
+struct mem_descriptor* mm_alloc(void);
+void mm_free(struct mem_descriptor *mm);
+struct mem_descriptor* mm_copy(struct mem_descriptor *old_mm);  // for fork()
 
-int mm_setup_executable(struct mem_descriptor_t *mm, vaddr_t code_start, 
-                       vaddr_t code_end, vaddr_t data_end);
+int mm_setup_executable(struct mem_descriptor *mm, virt_addr code_start, 
+                       virt_addr code_end, virt_addr data_end);
 
 // brk() is for heap 
-vaddr_t mm_brk(struct mem_descriptor_t *mm, vaddr_t new_brk);
+virt_addr mm_brk(struct mem_descriptor *mm, virt_addr new_brk);
 
-struct mem_region_t* mm_find_region(struct mem_descriptor_t *mm, vaddr_t addr);
-int mm_add_region(struct mem_descriptor_t *mm, vaddr_t start, 
-                                vaddr_t end, uint64_t flags);
-int mm_remove_region(struct mem_descriptor_t *mm, vaddr_t start, vaddr_t end);
+struct mem_region* mm_find_region(struct mem_descriptor *mm, virt_addr addr);
+int mm_add_region(struct mem_descriptor *mm, virt_addr start, 
+                                virt_addr end, uint64_t flags);
+int mm_remove_region(struct mem_descriptor *mm, virt_addr start, virt_addr end);
 
 // for mmap()
-int mm_munmap(struct mem_descriptor_t *mm, vaddr_t addr, size_t len);
-vaddr_t mm_mmap(struct mem_descriptor_t *mm, vaddr_t addr, size_t len, 
+int mm_munmap(struct mem_descriptor *mm, virt_addr addr, size_t len);
+virt_addr mm_mmap(struct mem_descriptor *mm, virt_addr addr, size_t len, 
                                                     int prot, int flags);
 
-bool mm_check_access(struct mem_descriptor_t *mm, vaddr_t addr, uint64_t flags);
+bool mm_check_access(struct mem_descriptor *mm, virt_addr addr, uint64_t flags);
 
-int mm_expand_stack(struct mem_descriptor_t *mm, vaddr_t fault_addr);
+int mm_expand_stack(struct mem_descriptor *mm, virt_addr fault_addr);
+int mm_expand_heap(struct mem_descriptor *mm, virt_addr fault_addr);
 void mm_page_fault_handler(uint64_t fault_addr, uint64_t error_code);
 
 #endif

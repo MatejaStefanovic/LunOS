@@ -36,7 +36,7 @@ void pic_remap(uint8_t offset1, uint8_t offset2)
 
 }
 
-void disable_pic(){
+void disable_pic(void){
 	// Mask both PICs.
 	outb(PIC1_DATA, 0xFF);
 	outb(PIC2_DATA, 0xFF);

@@ -3,22 +3,20 @@
 
 #include <stdint.h>
 
-struct regs_t {
-    // Manually pushed registers
-    uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
-    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
-    
-    // CR2 for page faults
+struct interrupt_frame { 
     uint64_t cr2;
     uint64_t int_no;
     uint64_t err_code;
-    
-    // CPU-pushed values
-    uint64_t rip;
+};
+
+struct task_context {
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
+    uint64_t rip; // 120
     uint64_t cs;
     uint64_t rflags;
-    uint64_t userrsp;
-    uint64_t ss;
+    uint64_t stack_ptr;
+    uint64_t ss;  
 };
 
 #endif

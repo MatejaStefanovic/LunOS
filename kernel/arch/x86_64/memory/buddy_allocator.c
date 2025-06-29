@@ -1,9 +1,9 @@
 #include <kernel/buddy_allocator.h>
 
 struct buddy_arena buddy_arenas[MAX_BUDDY_ARENAS];
-uint8_t buddy_arena_counter = 0;
+static uint8_t buddy_arena_counter = 0;
 
-void buddy_allocator_init(){
+void buddy_allocator_init(void){
     struct limine_memmap_request *mmap_req = get_memmap_request();
     if(!mmap_req){
         KERROR("CRITICAL ERROR: Couldn't not get memory map\nHalting");
@@ -95,7 +95,7 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
 }
 
 void populate_buddy_blocks(uint8_t arena_idx){
-struct buddy_arena *arena = &buddy_arenas[arena_idx];
+    struct buddy_arena *arena = &buddy_arenas[arena_idx];
     
     uint64_t current_addr = arena->base;
     uint64_t end_addr = arena->base + arena->length;
