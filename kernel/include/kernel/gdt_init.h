@@ -32,6 +32,8 @@ struct gdt_ptr {
     uint64_t base;
 } __attribute__((packed));
 
+extern struct gdt_ptr gdtr;
+
 struct task_state_seg {
     uint32_t reserved1;
     uint64_t rsp0;          // ring 0 stack ptr

@@ -60,7 +60,6 @@ struct task* create_init_task(void (*func)(void));
 void task_orphan_children(struct task* parent); 
 void task_destroy(struct task* task);
 
-
 // Task scheduling and state management
 void set_task_state(struct task *task, uint8_t state);
 void wake_up_task(struct task *task);
@@ -72,8 +71,8 @@ int waitpid(uint32_t pid, int *status);
 // Hierarchy and cleanup
 void task_add_child(struct task* parent, struct task* child);
 void task_add_zombie(struct task* parent, struct task* zombie);
-void cleanup_zombie(struct task *task);
-struct task* find_task_by_pid(uint32_t pid);
+void task_remove_child(struct task* parent, struct task* child);
+void task_remove_zombie(struct task* parent, struct task* zombie);
 
 // Signals and error handling
 void send_signal(struct task *task, int signal);

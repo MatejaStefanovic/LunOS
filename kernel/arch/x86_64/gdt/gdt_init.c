@@ -1,9 +1,9 @@
 #include <kernel/gdt_init.h>
 #include <string.h>
 
-struct global_descr_table gdt;
+static struct global_descr_table gdt;
 struct gdt_ptr gdtr;
-struct task_state_seg tss;
+static struct task_state_seg tss;
 
 static void load_tss(void) {
     size_t addr = (size_t)&tss;

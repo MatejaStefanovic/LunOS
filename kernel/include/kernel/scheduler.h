@@ -14,7 +14,6 @@ void scheduler_init(void);
 void sched_task(struct task* t, int cpu_id);
 void sched_remove_task(struct task* t);
 
-void run_task(struct task* t);
 void schedule(void);
 
 struct task* get_current_task(void);

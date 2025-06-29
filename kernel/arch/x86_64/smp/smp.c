@@ -7,7 +7,7 @@
 #include <kernel/task_manager.h>
 #include <kernel/spinlock.h>
 
-DEFINE_SPINLOCK(cpu_id_init);
+static DEFINE_SPINLOCK(cpu_id_init);
 static uint32_t percpu_processor_ids[MAX_CORES]; 
 static int cpu_id_ctr = 0;
 int total_cpus = 0;

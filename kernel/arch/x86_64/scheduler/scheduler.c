@@ -18,28 +18,31 @@ void scheduler_init(void){
     }
 }
 
-void run_task(struct task* ttr){ 
-    this_core_write(current_task, ttr);
-    struct task* curr = this_core_read(current_task);
-
-    load_next_task(&curr->cpu_context);
-}
-
 void sched_task(struct task* task, int cpu_id) { 
     if (!task)
         return;
     
     // Add to current CPU's runqueue using tasks_runnable node
-    spinlock_lock(&__percpu_runqueue_lock[cpu_id]);
+    // note: it isn't necessary to disable interrupts but it will 
+    // prove useful later when I switch to a priority scheduler or 
+    // if we switch to a task that calls sched_task immediately
+    // (makes it not waste a lot of cycles before the task that locked
+    // releases the lock
+    int_flags flags;
+    spinlock_lock_intsave(&__percpu_runqueue_lock[cpu_id], &flags);
     list_add_tail(&task->tasks_runnable, &__percpu_cpu_runqueue[cpu_id]);
-    spinlock_unlock(&__percpu_runqueue_lock[cpu_id]);
+    spinlock_unlock_intrestore(&__percpu_runqueue_lock[cpu_id], flags);
 }
 
 void sched_remove_task(struct task* task){
     if(!task)
         return;
 
+    // Same story as task_sched
+    int_flags flags;
+    spinlock_lock_intsave(&__percpu_runqueue_lock[task->cpu_id], &flags);
     list_del(&task->tasks_runnable);
+    spinlock_unlock_intrestore(&__percpu_runqueue_lock[task->cpu_id], flags);
 }
 
 struct task* get_current_task(void){
@@ -51,7 +54,8 @@ void schedule(void){
     struct task *current = this_core_read(current_task);
     struct task *next = NULL;
 
-    spinlock_lock(&this_core_read(runqueue_lock));
+    int_flags flags;
+    spinlock_lock_intsave(&this_core_read(runqueue_lock), &flags);
 
     struct list_node *runqueue = &this_core_read(cpu_runqueue);
     
@@ -77,7 +81,7 @@ void schedule(void){
         }
     }
 
-    spinlock_unlock(&this_core_read(runqueue_lock));
+    spinlock_unlock_intrestore(&this_core_read(runqueue_lock), flags);
     
     if (next && next != current) {
         this_core_write(current_task, next);
@@ -96,7 +100,7 @@ void schedule(void){
 
 
 
-void debug_print_runqueue(int cpu_id) {
+static void debug_print_runqueue(int cpu_id) {
     kprintf("=== CPU %d Runqueue ===\n", cpu_id);
     
     spinlock_lock(&__percpu_runqueue_lock[cpu_id]);
