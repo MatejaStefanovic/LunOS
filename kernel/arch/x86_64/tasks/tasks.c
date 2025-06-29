@@ -172,15 +172,3 @@ void task_orphan_children(struct task* dead_parent){
 
     spinlock_unlock_intrestore(&task_list_lock, flags);
 }
-
-void set_task_state(struct task *task, uint8_t state){
-    task->state = state;
-}
-
-void wake_up_task(struct task *task){
-    task->state = TASK_RUNNING;
-}
-
-void send_signal(struct task *task, int signal){
-    task->exit_signal = signal;
-} 
