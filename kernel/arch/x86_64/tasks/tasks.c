@@ -11,7 +11,7 @@ extern struct list_node all_tasks;
 extern struct list_node zombie_tasks;
 
 #define PID_MAX 1111111111  // Wrap around if we reach **I sincerely hope this never happens**
-static uint32_t pid_counter = 0;   // Start at 0 for INIT
+static uint32_t pid_counter = 1;   // Start at 1 for INIT
 
 static uint32_t incr_pid_ctr(void){
     spinlock_lock(&pid_ctr_lock);
@@ -19,7 +19,7 @@ static uint32_t incr_pid_ctr(void){
     uint32_t pid = pid_counter++;
     
     if (pid_counter > PID_MAX) 
-        pid_counter = 1;  // 0 is for INIT
+        pid_counter = 2;  // 1 is for INIT
     
     spinlock_unlock(&pid_ctr_lock);
     
@@ -31,7 +31,7 @@ struct task* create_task(void){
     if(!task)
         return NULL;
 
-    task->pid =  incr_pid_ctr();
+    task->pid = 0;
     task->tgid = task->pid;
     
     // Background task by default (for kernel use)
@@ -69,10 +69,8 @@ struct task* create_kernel_task(void (*func)(void)) {
 
     // We need to allocate a kernel stack for this to work
     void* stack = kmalloc(KERNEL_STACK_SIZE);
-    if (!stack){
-        kfree(ktask); // Clean up what we already allocated
+    if (!stack)
         return NULL;
-    }
 
     // Set up stack pointer at top of allocated stack
     ktask->kernel_stack_base = stack; // Keep track of base so we know where to free later
@@ -90,6 +88,40 @@ struct task* create_kernel_task(void (*func)(void)) {
     spinlock_unlock_intrestore(&task_list_lock, flags);
     
     return ktask;
+}
+
+// Will later take some info from the ELF loader
+// such as user task entry point, size of code and 
+// data segment etc. this is just a prototype 
+struct task* create_user_task(void){
+    struct task *utask = create_task();
+    
+    if(!utask)
+        return NULL;
+
+    utask->pid = incr_pid_ctr();
+    utask->tgid = utask->pid;
+
+    utask->md = kmalloc(sizeof(struct mem_descriptor));
+    if(!utask->md)
+        return NULL;
+
+    /*
+     * Here should go stuff like 
+     * mm_set_executable() but I'll only add this stuff
+     * once I set up VFS and ELF loader, for now kernel 
+     * task scheduling seems to work despite the weird
+     * interrupt CPU behavior
+    */
+
+    list_init(&utask->tasks_runnable);
+    
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_add_tail(&utask->tasks, &all_tasks); 
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+    
+    return utask;
 }
 
 void task_destroy(struct task* task) {
@@ -164,7 +196,7 @@ void task_orphan_children(struct task* dead_parent){
     for(struct list_node* node = dead_parent->children.next; node != &dead_parent->children;){
         struct list_node* node_to_remove = node; 
         node = node->next;
-        struct task* child = container_of(node_to_remove, struct task, sibling);
+        //struct task* child = container_of(node_to_remove, struct task, sibling);
         //child->parent = init; // Don't have init yet
         list_del(node_to_remove); 
         //list_add_tail(child->siblings, init->children); // Don't have init

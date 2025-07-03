@@ -6,13 +6,13 @@
  * which we uniformally call tasks */
 #include <kernel/vmm.h>
 
-#define STACK_SIZE (8 * 1024 * 1024)  // 8MB stack
+#define STACK_SIZE (8 * 1024 * 1024)    // 8MB stack
 #define STACK_TOP 0x00007FFFFFFFFFFF
 
 #define HEAP_GROW_SIZE (64 * 1024)   
-#define HEAP_GROW_ORDER 4           // 2^4 = 16 pages = 64KiB
+#define HEAP_GROW_ORDER 4               // 2^4 = 16 pages = 64KiB
+#define HEAP_SIZE (1024 * 1024 * 1024)  // 1GB heap 
 #define GUARD_SIZE PAGE_SIZE 
-
 
 // Page fault error code bits 
 #define PF_PRESENT    (1 << 0)  // Page was present (1) or not present (0)

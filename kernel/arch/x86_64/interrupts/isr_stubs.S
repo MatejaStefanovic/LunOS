@@ -127,7 +127,7 @@ isr_common_stub:
     
     movq 40(%rsp), %rcx 
     movq %rcx, 144(%rax)    # RSP
-    movq $0x10, 152(%rax)   # SS for kernel is 0x30
+    movq $0x10, 152(%rax)   # SS for kernel is 0x10
 
     # What we need to do now have only the values 
     # we want as our interrupt frame on the stack

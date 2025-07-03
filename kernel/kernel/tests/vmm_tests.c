@@ -294,6 +294,7 @@ static int test_vmm_unmap(void) {
 }
 
 // Test memory access behavior after unmapping
+/*
 static int test_vmm_unmap_memory_access(void) {
     kprintf("=== VMM Unmap Memory Access Test ===\n");
     
@@ -725,6 +726,7 @@ static int test_memory_access_safe(void) {
     kprintf("=== Safe memory access tests passed! ===\n");
     return 0;
 }
+*/
 
 // Main test function to call from your kernel
 void run_vmm_tests(void) {

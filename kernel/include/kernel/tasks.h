@@ -55,7 +55,7 @@ struct task {
 // Task creation and initialization
 struct task* create_task(void);
 struct task* create_kernel_task(void (*func)(void));    
-struct task* create_init_task(void (*func)(void));
+struct task* create_user_task(void);
 
 void task_orphan_children(struct task* parent); 
 void task_destroy(struct task* task);

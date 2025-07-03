@@ -98,12 +98,20 @@ void mm_free(struct mem_descriptor *mm){
 
 int mm_setup_executable(struct mem_descriptor *mm, 
                        virt_addr code_start, virt_addr code_end, virt_addr data_end) {
-    mm_add_region(mm, code_start, code_end, RP_READ | RP_EXEC);
     
+    // TODO: virtually map code and data segment, we'll get some info from 
+    // elf loader when I do make it
+    mm_add_region(mm, code_start, code_end, RP_READ | RP_EXEC);
     virt_addr data_start = (code_end + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
     mm_add_region(mm, data_start, data_end, RP_READ | RP_WRITE);
+
+    virt_addr heap_start = (data_end + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+    virt_addr heap_end = heap_start + HEAP_SIZE - 1;
+    mm->brk = heap_start;
     
-    mm->brk = data_end + PAGE_SIZE;
+    virt_addr guard_heap = heap_end + GUARD_SIZE;
+    mm_add_region(mm, heap_start, heap_end, RP_READ | RP_WRITE | RP_HEAP);  
+    mm_add_region(mm, heap_end + 1, guard_heap, 0);
 
     virt_addr stack_top = STACK_TOP;
     virt_addr stack_bottom = stack_top - STACK_SIZE + 1;
@@ -142,6 +150,12 @@ int mm_expand_stack(struct mem_descriptor *mm, virt_addr fault_addr) {
 
 
 int mm_expand_heap(struct mem_descriptor *mm, virt_addr fault_addr) {
+    if(fault_addr < mm->brk){
+        KERROR("Fault address is lower than heap brk - something is seriously wrong\n");
+        kprintf("Fault addr: %lx\nHeap brk: %lx\n", fault_addr, mm->brk);
+        return 0;
+    }
+
     virt_addr grow_start = mm->brk;
     
     phys_addr phys_start = buddy_alloc_pages(HEAP_GROW_ORDER);
