@@ -32,6 +32,7 @@ kernel/console/logging/klogging.o \
 kernel/tests/vmm_tests.o \
 kernel/tests/malloc_tests.o \
 kernel/memmgr/memmgr.o \
+kernel/filesystems/vfs.o \
 
 OBJS=\
 $(KERNEL_OBJS) \
