@@ -27,7 +27,7 @@ static uint32_t incr_pid_ctr(void){
 }
 
 struct task* create_task(void){
-    struct task *task = kmalloc(sizeof(struct task));
+    struct task *task = kmalloc(sizeof(*task));
     if(!task)
         return NULL;
 
@@ -102,7 +102,7 @@ struct task* create_user_task(void){
     utask->pid = incr_pid_ctr();
     utask->tgid = utask->pid;
 
-    utask->md = kmalloc(sizeof(struct mem_descriptor));
+    utask->md = kmalloc(sizeof(*utask->md));
     if(!utask->md)
         return NULL;
 

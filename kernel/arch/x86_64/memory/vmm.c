@@ -57,8 +57,8 @@ int vmm_init(void){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
 
-    kernel_as = kmalloc(sizeof(struct addr_space));
-    memset(kernel_as, 0, sizeof(struct addr_space));
+    kernel_as = kmalloc(sizeof(*kernel_as));
+    memset(kernel_as, 0, sizeof(*kernel_as));
     
     if(!kernel_as){
         kprintf("Couldn't create kernel address space\n");
@@ -76,13 +76,13 @@ int vmm_init(void){
 }
 
 struct addr_space *vmm_create_address_space(void){
-    struct addr_space *as = kmalloc(sizeof(struct addr_space));
+    struct addr_space *as = kmalloc(sizeof(*as));
     if(!as){
         KERROR("Couldn't allocate memory for an address space\n");
         return NULL;
     }
 
-    memset(as, 0, sizeof(struct addr_space));
+    memset(as, 0, sizeof(*as));
 
     as->pml4 = vmm_alloc_page_table();
     if(!as->pml4){

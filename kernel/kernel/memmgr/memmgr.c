@@ -9,7 +9,7 @@ int mm_add_region(struct mem_descriptor *mm, virt_addr start,
         return -1;
     }
 
-    struct mem_region *region = kmalloc(sizeof(struct mem_region));
+    struct mem_region *region = kmalloc(sizeof(*region));
 
     region->start = start;
     region->end = end;
@@ -59,7 +59,7 @@ struct mem_region *mm_find_region(struct mem_descriptor *mm, virt_addr vaddr){
 
 // Only for user space as kernel tasks will have NULL mem descriptor
 struct mem_descriptor *mm_alloc(void){
-    struct mem_descriptor *mem_desc = kmalloc(sizeof(struct mem_descriptor));
+    struct mem_descriptor *mem_desc = kmalloc(sizeof(*mem_desc));
     struct addr_space *as = vmm_create_address_space();
     
     if(!as)
