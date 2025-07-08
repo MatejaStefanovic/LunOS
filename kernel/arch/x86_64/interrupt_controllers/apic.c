@@ -6,7 +6,7 @@
 #include <kernel/smp.h>
 #include <kernel/scheduler.h>
 
-#include <string.h>
+#include <klib/string.h>
 
 static volatile uint32_t *apic_base = NULL;
 static uint32_t apic_timer_frequency = 0;

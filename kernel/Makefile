@@ -13,7 +13,7 @@ INCLUDEDIR?=$(PREFIX)/include
 CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -g
 CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
 LDFLAGS:=$(LDFLAGS)
-LIBS:=$(LIBS) -nostdlib -lk -lgcc
+LIBS:=$(LIBS) -nostdlib -lgcc
 ARCHDIR=arch/$(HOSTARCH)
 LIMINE_CFG = limine.cfg
 
@@ -32,6 +32,10 @@ kernel/console/logging/klogging.o \
 kernel/tests/vmm_tests.o \
 kernel/tests/malloc_tests.o \
 kernel/memmgr/memmgr.o \
+kernel/filesystems/vfs.o \
+kernel/klib/string.o \
+kernel/klib/utils.o \
+kernel/klib/stdio.o \
 
 OBJS=\
 $(KERNEL_OBJS) \

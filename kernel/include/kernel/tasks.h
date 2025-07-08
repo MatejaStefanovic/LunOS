@@ -40,9 +40,9 @@ struct task {
     struct task *parent;
 
     struct list_node children;        // For live children
-    struct list_node sibling;        // To link into parent's children
+    struct list_node siblings;        // To link into parent's children
     struct list_node zombie_children; // For dead children (as parent)
-    struct list_node zombie_sibling;  // To link into parent's zombie_children (as child)
+    struct list_node zombie_siblings;  // To link into parent's zombie_children (as child)
     
 
     struct list_node tasks;           // Used to put task into global list of tasks 
@@ -55,7 +55,7 @@ struct task {
 // Task creation and initialization
 struct task* create_task(void);
 struct task* create_kernel_task(void (*func)(void));    
-struct task* create_init_task(void (*func)(void));
+struct task* create_user_task(void);
 
 void task_orphan_children(struct task* parent); 
 void task_destroy(struct task* task);

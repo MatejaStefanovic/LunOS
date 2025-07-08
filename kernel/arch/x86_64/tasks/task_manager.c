@@ -37,7 +37,7 @@ struct task* create_and_schedule_kernel_task(void (*func)(void)){
 void task_exit(int exit_code) {
     struct task *current = get_current_task();
 
-    int_flags flags = save_and_disable_interrupts();
+    save_and_disable_interrupts();
 
     current->exit_code = exit_code;
     current->state = TASK_ZOMBIE;

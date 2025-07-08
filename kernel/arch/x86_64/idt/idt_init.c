@@ -2,7 +2,7 @@
 #include <kernel/pic.h>
 #include <kernel/isr_handler.h>
 #include <kernel/klogging.h>
-#include <string.h>
+#include <klib/string.h>
 
 static struct idt_entry_t idt[IDT_SIZE];
 static struct idt_ptr idtr;

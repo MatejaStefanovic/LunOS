@@ -33,30 +33,18 @@ uint32_t get_current_core_id(void) {
     return processor_id;
 }
 
-static void func(void){
-    kprintf("Core: %d, FUNC TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
-    while(1);
-    /*while(1) {
-            for(volatile int i = 0; i < 100000000; i++); // Simple delay
-    }*/
-}
 
 static void boot_idle_task(void){  
-    struct task *task = create_and_schedule_kernel_task(func);
     apic_timer_enable();
     
     kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
-    while(1);
-    while(1) {
+    while(1)
+        __asm__ __volatile__("pause");
+    
+    /*while(1) {
         kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
         for(volatile int i = 0; i < 100000000; i++); // Simple delay
-    }
-}
-
-static void init_task(void){ 
-    kprintf("Core: %d, TASK PID: %d\n",get_current_core_id(), this_core_read(current_task)->pid);
-    apic_timer_enable();
-    while(1);
+    }*/
 }
 
 static void ap_entry_point(struct limine_smp_info *cpu_info) {
@@ -95,10 +83,12 @@ void smp_init(void) {
     total_cpus = mp_response->cpu_count;
     init_task_ctr(total_cpus);
 
-    struct task *init = create_and_schedule_kernel_task(init_task);  
-    struct task *task1 = create_and_schedule_kernel_task(boot_idle_task);
+    struct task *task1 = create_and_schedule_kernel_task(boot_idle_task);  
     struct task *task2 = create_and_schedule_kernel_task(boot_idle_task);
     struct task *task3 = create_and_schedule_kernel_task(boot_idle_task);
+    struct task *task4 = create_and_schedule_kernel_task(boot_idle_task);
+    KSUCCESS("Successfully created tasks for CPU IDs: %d %d %d %d\n",
+            task1->cpu_id, task2->cpu_id, task3->cpu_id, task4->cpu_id);
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
