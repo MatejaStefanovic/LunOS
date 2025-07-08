@@ -1,6 +1,6 @@
 #include <kernel/vmm.h>
 #include <kernel/pmm.h>
-#include <string.h>
+#include <klib/string.h>
 
 static struct page_table* current_pml4 = NULL;
 static uint64_t hhdm_offset;

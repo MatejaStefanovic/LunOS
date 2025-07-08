@@ -3,7 +3,7 @@
 #include <kernel/klogging.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <string.h>
+#include <klib/string.h>
 
 
 static void test_basic_allocation(void) {

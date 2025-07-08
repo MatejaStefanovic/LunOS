@@ -1,6 +1,5 @@
-#include <stdio.h> 
-#include <utils.h>
-
+#include <klib/stdio.h>
+#include <klib/utils.h>
 // Integer to ASCII that returns the length of the string
 int itoa(int i, char *str){
     int index = 0;

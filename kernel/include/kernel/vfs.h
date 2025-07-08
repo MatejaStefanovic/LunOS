@@ -2,7 +2,7 @@
 #define __KERNEL_VFS_H
 
 #include <stddef.h>
-#include <string.h>
+#include <klib/string.h>
 #include <ds/lists.h>
 
 // signed size_t so we can return -1 on err
@@ -74,7 +74,7 @@ struct inode {
     unsigned int mode;      // Type and permissions
     unsigned int uid, gid;  // Won't have users but this is needed for compatibility with Linux
     unsigned long size;
-    int ref_count;
+    int refcount;
     struct list_node sb_inode_list; // Node in superblock's inode list 
     // Data used depending on the instance of the inode
     // Different drivers may require different data 
@@ -87,8 +87,8 @@ struct dentry {
     struct inode *inode;
     struct dentry *parent;
     struct list_node children;
-    struct list_node sibling;
-    int ref_count;
+    struct list_node siblings;
+    int refcount;
     int flags;
     struct dentry *d_hash; // for hash table linking
 };
@@ -126,7 +126,9 @@ struct mount_point {
 #define VFS_EIVAL -3
 #define VFS_ENOTDIR -4
 
-struct dentry *alloc_dentry(const char *name, struct inode *inode);
+#define DENTRY_NAME_MAX_LENGTH 255 // 256 is for \0
+struct dentry *alloc_dentry(struct dentry *parent, const char *name);
+void instantiate_dentry(struct dentry *entry, struct inode *i_node);
 void free_dentry(struct dentry *dentry);
 struct dentry *path_walk(const char *path);
 

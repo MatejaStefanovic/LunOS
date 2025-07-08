@@ -33,6 +33,9 @@ kernel/tests/vmm_tests.o \
 kernel/tests/malloc_tests.o \
 kernel/memmgr/memmgr.o \
 kernel/filesystems/vfs.o \
+kernel/klib/string.o \
+kernel/klib/utils.o \
+kernel/klib/stdio.o \
 
 OBJS=\
 $(KERNEL_OBJS) \

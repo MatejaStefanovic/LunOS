@@ -1,5 +1,5 @@
 #include <kernel/gdt_init.h>
-#include <string.h>
+#include <klib/string.h>
 
 static struct global_descr_table gdt;
 struct gdt_ptr gdtr;
