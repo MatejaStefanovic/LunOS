@@ -1,6 +1,7 @@
 #ifndef __KERNEL_VFS_H
 #define __KERNEL_VFS_H
 
+#include <stdint.h>
 #include <stddef.h>
 #include <klib/string.h>
 #include <ds/lists.h>
@@ -67,13 +68,13 @@ struct superblock_operations {
 };
 
 struct inode {
-    unsigned long inode_number;
+    uint64_t inode_number;
     struct super_block *sb;
     struct inode_operations *i_ops;
     struct file_operations *f_ops;
-    unsigned int mode;      // Type and permissions
-    unsigned int uid, gid;  // Won't have users but this is needed for compatibility with Linux
-    unsigned long size;
+    uint32_t mode;      // Type and permissions
+    uint32_t uid, gid;  // Won't have users but this is needed for compatibility with Linux
+    uint64_t size;
     int refcount;
     struct list_node sb_inode_list; // Node in superblock's inode list 
     // Data used depending on the instance of the inode
@@ -90,7 +91,7 @@ struct dentry {
     struct list_node siblings;
     int refcount;
     int flags;
-    struct dentry *d_hash; // for hash table linking
+    struct dentry *d_hash_next; // for hash table linking
 };
 
 // Superblock is like a header for a file system instance
@@ -99,8 +100,8 @@ struct super_block {
     struct superblock_operations *s_ops;
     struct inode *root_inode;
     struct list_node sb_inode;  // All inodes for this superblock
-    unsigned long block_size;
-    unsigned long magic;        // Filesystem magic number
+    uint64_t block_size;
+    uint64_t magic;        // Filesystem magic number
     // Same story as before, private data depending on
     // which file system this superblock represents
     void *private_data;

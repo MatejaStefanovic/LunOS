@@ -15,7 +15,7 @@ void buddy_allocator_init(void){
         hcf();
     }
     
-    for(uint64_t i = 0; i < mmap_response->entry_count; ++i){
+    for(uint64_t i = 0; i < mmap_response->entry_count; i++){
         struct limine_memmap_entry *entry = mmap_response->entries[i];
 
         if(entry->type != 0)
@@ -38,7 +38,7 @@ void buddy_allocator_init(void){
             KSUCCESS("Buddy Arena %d initialized\n", buddy_arena_counter);
             kprintf("     Base:  0x%lx\n", aligned_base);
             kprintf("     Size:  %lu bytes (%lu MiB)\n", aligned_len, aligned_len / (1024 * 1024));
-            ++buddy_arena_counter;
+            buddy_arena_counter++;
 
         }
     }
@@ -77,7 +77,7 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
     
     uint8_t max_order = 0;
     while (((1ULL << (max_order + 1)) * PAGE_FRAME_SIZE) <= aligned_len) {
-        ++max_order;
+        max_order++;
     }
     
     if (max_order > MAX_SUPPORTED_ORDER) {
@@ -86,7 +86,7 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
     
     buddy_arenas[arena_idx].max_arena_order = max_order;
     
-    for (int i = 0; i <= MAX_SUPPORTED_ORDER; ++i) {
+    for (int i = 0; i <= MAX_SUPPORTED_ORDER; i++) {
         buddy_arenas[arena_idx].free_list[i] = NULL;
     }
     
@@ -149,7 +149,7 @@ uint64_t buddy_alloc_pages(uint8_t order){
     if (order > MAX_SUPPORTED_ORDER)
         return 0;
     
-    for(int i = 0; i < buddy_arena_counter; ++i){
+    for(int i = 0; i < buddy_arena_counter; i++){
         struct buddy_arena *arena = &buddy_arenas[i];
 
         // If we got a block of that order allocate it
@@ -164,7 +164,7 @@ uint64_t buddy_alloc_pages(uint8_t order){
         // Start with one order higher and if that exists split it into 2
         // if not we go even higher to split that one and then we allocate 
         // the appropriate one
-        for(int j = order + 1; j <= arena->max_arena_order; ++j){
+        for(int j = order + 1; j <= arena->max_arena_order; j++){
             if(arena->free_list[j] == NULL)
                 continue;
     
@@ -206,7 +206,7 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
 
     // Find arena based on phys_addr
     struct buddy_arena *arena = NULL;
-    for(int i = 0; i < buddy_arena_counter; ++i){
+    for(int i = 0; i < buddy_arena_counter; i++){
         if(phys_addr >= buddy_arenas[i].base &&
                 phys_addr < buddy_arenas[i].base + buddy_arenas[i].length){
 
@@ -256,7 +256,7 @@ void buddy_free_pages(uint64_t phys_addr, uint8_t order){
         if(buddy_addr < phys_addr)
             phys_addr = buddy_addr;
         
-        ++order;
+        order++;
     }
     // Link the new buddy
     // Note: we don't do this inside the while loop as we might also find
@@ -284,7 +284,7 @@ void buddy_free_page(uint64_t phys_addr) {
 
 void print_buddy_arena(uint8_t buddy_arena_counter) {
     struct buddy_arena *arena = &buddy_arenas[buddy_arena_counter];
-    for (int order = 0; order <= arena->max_arena_order; ++order) {
+    for (int order = 0; order <= arena->max_arena_order; order++) {
         kprintf("Order %d: ", order);
         struct free_block *block = arena->free_list[order];
         int count = 0;
@@ -307,12 +307,12 @@ void print_arena_summary(uint8_t arena_idx) {
 
     kprintf("\n[+] Arena %d Free Summary:\n", arena_idx);
 
-    for (int order = 0; order <= arena->max_arena_order; ++order) {
+    for (int order = 0; order <= arena->max_arena_order; order++) {
         struct free_block *block = arena->free_list[order];
         uint64_t block_count = 0;
 
         while (block) {
-            ++block_count;
+            block_count++;
             block = block->next;
         }
 
