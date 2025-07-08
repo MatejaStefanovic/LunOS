@@ -1,6 +1,7 @@
 #include <kernel/dentry_cache.h>
 #include <kernel/vfs.h>
 #include <kernel/klogging.h>
+#include <kernel/compiler.h>
 #include <klib/string.h>
 
 #define DENTRY_HASH_SIZE 256
@@ -33,7 +34,11 @@ static size_t hash_function(uint64_t parent_inode_num, const char *key, size_t l
 }
 
 static int dentry_ht_bucket(struct dentry *entry) {
-    uint64_t parent_inode_num = entry->parent->inode->inode_number;
+    uint64_t parent_inode_num; 
+    if(_likely(entry->parent))
+        parent_inode_num = entry->parent->inode->inode_number;
+    else
+        parent_inode_num = 0;
     size_t hash = hash_function(parent_inode_num, entry->name, strlen(entry->name)); 
     return hash % DENTRY_HASH_SIZE; 
 }

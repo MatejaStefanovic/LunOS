@@ -2,6 +2,7 @@
 #define __KERNEL_VIRTUAL_MEM_MANAGER_H
 
 #include <kernel/memutils.h>
+#include <kernel/compiler.h>
 
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
@@ -34,8 +35,7 @@
 
 struct page_table {
     page_table_entry entries[512];
-} __attribute__((aligned(PAGE_SIZE)));
-
+} _page_aligned; 
 
 struct addr_space{
     struct page_table *pml4;
