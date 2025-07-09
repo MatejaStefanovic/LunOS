@@ -9,7 +9,7 @@ void reverse_str(char *str){
         str[start] = str[end];
         str[end] = tmp;
 
-        ++start;
+        start++;
         --end;
     }
 }

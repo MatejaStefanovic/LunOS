@@ -32,7 +32,7 @@ void *kmalloc(size_t size) {
     size_t block_size = PAGE_FRAME_SIZE;
     
     while (block_size < total_size) {
-        ++order;
+        order++;
         block_size <<= 1;
     }
     

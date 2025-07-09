@@ -1,6 +1,8 @@
 #include <kernel/vfs.h>
 #include <kernel/pmm.h>
 #include <kernel/klogging.h>
+#include <kernel/dentry_cache.h>
+#include <kernel/compiler.h>
 #include <klib/string.h>
 
 struct dentry *alloc_dentry(struct dentry *parent, const char *name){
@@ -17,12 +19,16 @@ struct dentry *alloc_dentry(struct dentry *parent, const char *name){
     list_init(&d->children);
     list_init(&d->siblings);
     d->parent = parent;
-    list_add_tail(&d->siblings, &parent->children);
+    
+    // root directory has no parent hence the check
+    if(_likely(parent)) 
+        list_add_tail(&d->siblings, &parent->children);
 
     d->refcount = 1; 
     d->flags = 0;
-    // TODO: add d_hash (implement hash map later) 
     
+    dcache_add(d);
+
     return d;
 }
 
@@ -33,4 +39,17 @@ void instantiate_dentry(struct dentry *entry, struct inode *i_node){
     }
     entry->inode = i_node;
     i_node->refcount++; 
+}
+
+void free_dentry(struct dentry *d){
+    if(d->refcount != 0)
+        KWARN("Dentry with a refcount higher than 0 was asked to be freed\n");
+
+    if(d->inode)
+        d->inode->refcount--;
+    
+    dcache_remove(d);
+  
+    kfree(d->name);
+    kfree(d);
 }

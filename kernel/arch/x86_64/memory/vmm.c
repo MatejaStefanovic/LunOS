@@ -97,7 +97,7 @@ struct addr_space *vmm_create_address_space(void){
         return as;
     }
 
-    for(int i = 256; i < 512; ++i)
+    for(int i = 256; i < 512; i++)
         as->pml4->entries[i] = kernel_as->pml4->entries[i];
     
     return as;
@@ -155,7 +155,7 @@ page_table_entry* vmm_walk_page_table(struct addr_space *as, virt_addr vaddr, bo
         PT_INDEX(vaddr)
     };
     
-    for (int level = 0; level < 4; ++level) {
+    for (int level = 0; level < 4; level++) {
         uint32_t idx = indices[level];
         page_table_entry* entry = &current->entries[idx];
         
