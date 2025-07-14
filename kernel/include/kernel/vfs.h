@@ -50,7 +50,7 @@ struct file_operations {
 };
 
 struct inode_operations {
-    struct inode *(*lookup)(struct inode *dir, const char *name);
+    struct dentry *(*lookup)(struct inode *dir, const char *name);
     int (*create)(struct inode *dir, const char *name, int mode);
     int (*mkdir)(struct inode *dir, const char *name, int mode);
     int (*unlink)(struct inode *dir, const char *name);
@@ -120,11 +120,28 @@ struct mount_point {
     struct mount_point *next;
 };
 
+// This represents an open file
+struct file {
+    struct inode *inode;
+    off_t offset;
+    int flags;
+    int mode;
+    struct file_operations *f_ops;
+    // Same principle as inode private data except this is
+    // for open files
+    void *private_data;
+};
+
+struct path {
+    struct dentry *cwd; // Current working dir
+    struct mount_point *mnt;
+}
+
 // Error codes
 #define VFS_OK 0
 #define VFS_ENOENT -1
 #define VFS_ENOMEM -2
-#define VFS_EIVAL -3
+#define VFS_EINVAL -3
 #define VFS_ENOTDIR -4
 
 #define DENTRY_NAME_MAX_LENGTH 255 // 256 is for \0
