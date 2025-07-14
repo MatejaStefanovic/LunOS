@@ -120,9 +120,15 @@ struct mount_point {
     struct mount_point *next;
 };
 
+struct path {
+    struct dentry *dentry; // Current working dir
+    struct mount_point *mnt;
+};
+
 // This represents an open file
 struct file {
     struct inode *inode;
+    struct path fpath; 
     off_t offset;
     int flags;
     int mode;
@@ -132,10 +138,6 @@ struct file {
     void *private_data;
 };
 
-struct path {
-    struct dentry *cwd; // Current working dir
-    struct mount_point *mnt;
-}
 
 // Error codes
 #define VFS_OK 0
@@ -143,12 +145,18 @@ struct path {
 #define VFS_ENOMEM -2
 #define VFS_EINVAL -3
 #define VFS_ENOTDIR -4
+#define VFS_EISDIR -5
+
+// Whence in lseek is this 
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
 
 #define DENTRY_NAME_MAX_LENGTH 255 // 256 is for \0
 struct dentry *alloc_dentry(struct dentry *parent, const char *name);
 void instantiate_dentry(struct dentry *entry, struct inode *i_node);
 void free_dentry(struct dentry *dentry);
-struct dentry *path_walk(const char *path);
+struct dentry *path_walk(const char *path, struct path *p);
 
 struct inode *alloc_inode(struct super_block *sb);
 void free_inode(struct inode *inode);
@@ -157,11 +165,11 @@ int register_filesystem(struct filesystem *fs);
 struct filesystem *find_filesystem(const char *name);
 
 // File operations
-int vfs_open(const char *path, int flags, struct file **file_out);
+int vfs_open(const char *path_name, struct path *p, int flags, struct file **file_out);
 int vfs_close(struct file *file);
 ssize_t vfs_read(struct file *file, char *buf, size_t count); 
 ssize_t vfs_write(struct file *file, const char *buf, size_t count);
-int vfs_lseek(struct file *file, off_t offset, int whence);
+off_t vfs_lseek(struct file *file, off_t offset, int whence);
 
 // Directory operations  
 int vfs_mkdir(const char *path, int mode);

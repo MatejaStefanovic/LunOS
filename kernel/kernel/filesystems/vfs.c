@@ -60,28 +60,40 @@ void free_dentry(struct dentry *d){
     kfree(d);
 }
 
-struct dentry *path_walk(const char *path, struct path *p){
-    if(!path)
+// We can either take in the absolute path or the relative path from
+// the current working directory
+struct dentry *path_walk(const char *abs_path, struct path *wd_path){
+    if(!abs_path)
         return NULL;
 
-    if(strcmp(path, "/") == 0){
+    if(strcmp(abs_path, "/") == 0){
         root_dentry->refcount++;
         return root_dentry;
     }
 
     struct dentry *parent = root_dentry;
     
-    if(p && p->cwd)
-        parent = p->cwd;
+    if(wd_path && wd_path->dentry)
+        parent = wd_path->dentry;
 
-    parent->refcount++;
+    // Use case: cd ..
+    if (strcmp(abs_path, "..") == 0) {
+        struct dentry *prev_dir = parent->parent ? parent->parent : parent;
+        prev_dir->refcount++; 
+        return prev_dir;
+    }
     
-    // We don't want the first / in the path
-    // so skip it
-    if(path[0] == '/')
-        path++;
-
-    char *path_copy = kstrndup(path, strlen(path));
+    if(strcmp(abs_path, ".") == 0){
+        parent->refcount++;
+        return parent;
+    }    
+   
+    // Skip the leading /
+    if(abs_path[0] == '/')
+        abs_path++;
+    
+    parent->refcount++; 
+    char *path_copy = kstrndup(abs_path, strlen(abs_path));
     // TODO: this saveptr needs to be CPU specific later
     char *saveptr;
     char *token = kstrtok_r(path_copy, "/", &saveptr);
@@ -94,6 +106,23 @@ struct dentry *path_walk(const char *path, struct path *p){
             continue;
         }
 
+        // Use case: ./a.out
+        if (strcmp(token, ".") == 0) {
+            token = kstrtok_r(NULL, "/", &saveptr);
+            continue;
+        }
+
+        // Use case: ../here/there 
+        if (strcmp(token, "..") == 0) {
+            struct dentry *prev = parent->parent ? parent->parent : parent;
+            prev->refcount++;
+            parent->refcount--;
+            parent = prev;
+
+            token = kstrtok_r(NULL, "/", &saveptr);
+            continue;
+        }
+        
         struct dentry *current = dcache_lookup(parent, token); 
 
         // Not in cache
@@ -195,5 +224,99 @@ struct filesystem *find_filesystem(const char *name){
             return fs;
         fs = fs->next;
     }
+    
+    return NULL;
 }
 
+int vfs_open(const char *abs_path, struct path *wd, int flags, struct file **file_out){
+    if(!abs_path || !file_out)
+        return  VFS_EINVAL;
+
+    struct dentry *dirent = path_walk(abs_path, wd);
+    if(!dirent)
+        return VFS_ENOENT;
+
+    if(!IS_DIRECTORY(dirent->inode->mode))
+        return VFS_EISDIR;       
+
+    struct file *f = kmalloc(sizeof(*f));
+    if(!f)
+        return VFS_ENOMEM;
+
+    f->fpath.dentry = dirent;
+    f->inode = dirent->inode;
+    f->offset = 0;
+    f->flags = flags;
+    f->mode = 0;  // FS sets this 
+    f->private_data = NULL;
+    f->f_ops = dirent->inode->f_ops;
+    
+    dirent->refcount++;
+    f->inode->refcount++;
+
+    if(f->f_ops && f->f_ops->open){
+        int ret = f->f_ops->open(f->inode, f);
+        if(ret != VFS_OK){
+            dirent->refcount--;
+            f->inode->refcount--;
+            kfree(f);
+            return ret;
+        }
+    }
+
+    *file_out = f;
+    return VFS_OK;
+}
+
+int vfs_close(struct file *f){
+    if(!f)
+        return VFS_EINVAL;
+    
+    int ret = VFS_OK;
+
+    // Some filesystems do not have close operation
+    if(f->f_ops && f->f_ops->close)
+        ret = f->f_ops->close(f->inode, f);
+    
+    f->fpath.dentry->refcount--;
+    f->inode->refcount--;
+
+    kfree(f);
+    return ret;
+}
+
+ssize_t vfs_read(struct file *f, char *buf, size_t count){
+    if(!f || !buf || !f->f_ops || !f->f_ops->read)
+        return -VFS_EINVAL;
+    
+    ssize_t amount_read = f->f_ops->read(f, buf, count, f->offset);
+    return amount_read;
+}
+
+ssize_t vfs_write(struct file *f, const char *buf, size_t count){
+    if(!f || !buf || !f->f_ops || !f->f_ops->write)
+        return -VFS_EINVAL;
+
+    ssize_t amount_written = f->f_ops->write(f, buf, count, f->offset);
+    return amount_written;
+}
+
+off_t vfs_lseek(struct file *f, off_t offset, int whence){ 
+    if(!f || !f->f_ops || !f->f_ops->lseek)
+        return -VFS_EINVAL;
+    
+    off_t new_offset = f->f_ops->lseek(f, offset, whence);  
+    return new_offset;
+}
+
+
+
+
+void vfs_debug_print_mounts(void) {
+    struct mount_point *mp = mount_table;
+    kprintf("Mount table:\n");
+    while (mp) {
+        kprintf("  %s -> %s\n", mp->path, mp->sb->fs->name);
+        mp = mp->next;
+    }
+}
