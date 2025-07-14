@@ -1,7 +1,7 @@
 #include <kernel/tasks.h>
 #include <kernel/pmm.h>
 #include <kernel/smp.h>
-#include <string.h>
+#include <klib/string.h>
 
 
 DEFINE_SPINLOCK(task_list_lock);
@@ -11,7 +11,7 @@ extern struct list_node all_tasks;
 extern struct list_node zombie_tasks;
 
 #define PID_MAX 1111111111  // Wrap around if we reach **I sincerely hope this never happens**
-static uint32_t pid_counter = 0;   // Start at 0 for INIT
+static uint32_t pid_counter = 1;   // Start at 1 for INIT
 
 static uint32_t incr_pid_ctr(void){
     spinlock_lock(&pid_ctr_lock);
@@ -19,7 +19,7 @@ static uint32_t incr_pid_ctr(void){
     uint32_t pid = pid_counter++;
     
     if (pid_counter > PID_MAX) 
-        pid_counter = 1;  // 0 is for INIT
+        pid_counter = 2;  // 1 is for INIT
     
     spinlock_unlock(&pid_ctr_lock);
     
@@ -27,11 +27,11 @@ static uint32_t incr_pid_ctr(void){
 }
 
 struct task* create_task(void){
-    struct task *task = kmalloc(sizeof(struct task));
+    struct task *task = kmalloc(sizeof(*task));
     if(!task)
         return NULL;
 
-    task->pid =  incr_pid_ctr();
+    task->pid = 0;
     task->tgid = task->pid;
     
     // Background task by default (for kernel use)
@@ -49,9 +49,9 @@ struct task* create_task(void){
 
     task->parent = NULL; // Will later be INIT when I end up making it
 
-    list_init(&task->sibling);
+    list_init(&task->siblings);
     list_init(&task->children);
-    list_init(&task->zombie_sibling);
+    list_init(&task->zombie_siblings);
     list_init(&task->zombie_children);
 
     task->exit_code = 0;
@@ -70,7 +70,7 @@ struct task* create_kernel_task(void (*func)(void)) {
     // We need to allocate a kernel stack for this to work
     void* stack = kmalloc(KERNEL_STACK_SIZE);
     if (!stack){
-        kfree(ktask); // Clean up what we already allocated
+        kfree(ktask); // Free what we already allocated
         return NULL;
     }
 
@@ -92,11 +92,46 @@ struct task* create_kernel_task(void (*func)(void)) {
     return ktask;
 }
 
+// Will later take some info from the ELF loader
+// such as user task entry point, size of code and 
+// data segment etc. this is just a prototype 
+struct task* create_user_task(void){
+    struct task *utask = create_task();
+    
+    if(!utask)
+        return NULL;
+
+    utask->pid = incr_pid_ctr();
+    utask->tgid = utask->pid;
+
+    utask->md = kmalloc(sizeof(*utask->md));
+    if(!utask->md){
+        kfree(utask); // Free what we already allocated
+        return NULL;
+    }
+    /*
+     * Here should go stuff like 
+     * mm_set_executable() but I'll only add this stuff
+     * once I set up VFS and ELF loader, for now kernel 
+     * task scheduling seems to work despite the weird
+     * interrupt CPU behavior
+    */
+
+    list_init(&utask->tasks_runnable);
+    
+    int_flags flags;
+    spinlock_lock_intsave(&task_list_lock, &flags);
+    list_add_tail(&utask->tasks, &all_tasks); 
+    spinlock_unlock_intrestore(&task_list_lock, flags);
+    
+    return utask;
+}
+
 void task_destroy(struct task* task) {
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
     list_del(&task->tasks);        // Remove from global list
-    list_del(&task->sibling);     // Remove from parent's children
+    list_del(&task->siblings);     // Remove from parent's children
     spinlock_unlock_intrestore(&task_list_lock, flags);
     
     // Free if non kernel space task
@@ -117,7 +152,7 @@ void task_add_child(struct task* parent, struct task* child){
 
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
-    list_add_tail(&child->sibling, &parent->children);
+    list_add_tail(&child->siblings, &parent->children);
     spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
@@ -129,7 +164,7 @@ void task_remove_child(struct task* parent, struct task* child){
 
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
-    list_del(&child->sibling);
+    list_del(&child->siblings);
     spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
@@ -141,8 +176,8 @@ void task_add_zombie(struct task* parent, struct task* zombie){
 
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
-    list_del(&zombie->sibling); // Remove from parent's children
-    list_add_tail(&zombie->zombie_sibling, &parent->zombie_children); // Add to zombie children
+    list_del(&zombie->siblings); // Remove from parent's children
+    list_add_tail(&zombie->zombie_siblings, &parent->zombie_children); // Add to zombie children
     spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
@@ -154,7 +189,7 @@ void task_remove_zombie(struct task* parent, struct task* zombie){
 
     int_flags flags;
     spinlock_lock_intsave(&task_list_lock, &flags);
-    list_del(&zombie->zombie_sibling);
+    list_del(&zombie->zombie_siblings);
     spinlock_unlock_intrestore(&task_list_lock, flags);
 }
 
@@ -164,7 +199,7 @@ void task_orphan_children(struct task* dead_parent){
     for(struct list_node* node = dead_parent->children.next; node != &dead_parent->children;){
         struct list_node* node_to_remove = node; 
         node = node->next;
-        struct task* child = container_of(node_to_remove, struct task, sibling);
+        //struct task* child = container_of(node_to_remove, struct task, siblings);
         //child->parent = init; // Don't have init yet
         list_del(node_to_remove); 
         //list_add_tail(child->siblings, init->children); // Don't have init

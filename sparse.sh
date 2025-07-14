@@ -8,7 +8,6 @@ find . -name "*.c" -type f | while read -r file; do
         -D__is_kernel \
         -Ikernel/include \
         -Ikernel/tests \
-        -Ilibc/include \
         -ffreestanding \
         -mcmodel=large \
         -mno-red-zone \

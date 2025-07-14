@@ -1,6 +1,6 @@
 #include <kernel/vmm.h>
 #include <kernel/pmm.h>
-#include <string.h>
+#include <klib/string.h>
 
 static struct page_table* current_pml4 = NULL;
 static uint64_t hhdm_offset;
@@ -57,8 +57,8 @@ int vmm_init(void){
     hhdm_offset = get_hhdm_offset();
     current_pml4 = get_current_pml4();
 
-    kernel_as = kmalloc(sizeof(struct addr_space));
-    memset(kernel_as, 0, sizeof(struct addr_space));
+    kernel_as = kmalloc(sizeof(*kernel_as));
+    memset(kernel_as, 0, sizeof(*kernel_as));
     
     if(!kernel_as){
         kprintf("Couldn't create kernel address space\n");
@@ -76,13 +76,13 @@ int vmm_init(void){
 }
 
 struct addr_space *vmm_create_address_space(void){
-    struct addr_space *as = kmalloc(sizeof(struct addr_space));
+    struct addr_space *as = kmalloc(sizeof(*as));
     if(!as){
         KERROR("Couldn't allocate memory for an address space\n");
         return NULL;
     }
 
-    memset(as, 0, sizeof(struct addr_space));
+    memset(as, 0, sizeof(*as));
 
     as->pml4 = vmm_alloc_page_table();
     if(!as->pml4){
@@ -97,7 +97,7 @@ struct addr_space *vmm_create_address_space(void){
         return as;
     }
 
-    for(int i = 256; i < 512; ++i)
+    for(int i = 256; i < 512; i++)
         as->pml4->entries[i] = kernel_as->pml4->entries[i];
     
     return as;
@@ -155,7 +155,7 @@ page_table_entry* vmm_walk_page_table(struct addr_space *as, virt_addr vaddr, bo
         PT_INDEX(vaddr)
     };
     
-    for (int level = 0; level < 4; ++level) {
+    for (int level = 0; level < 4; level++) {
         uint32_t idx = indices[level];
         page_table_entry* entry = &current->entries[idx];
         

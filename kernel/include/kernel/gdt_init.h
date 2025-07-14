@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <kernel/compiler.h>
 
 #define NUM_OF_ENTRIES 6
 
@@ -14,7 +15,7 @@ struct gdt_entry {
     uint8_t access;
     uint8_t granularity;
     uint8_t base_higher;    
-} __attribute__((packed));
+} _packed;
 
 struct tss_descriptor {
     uint16_t limit_lower;
@@ -25,12 +26,12 @@ struct tss_descriptor {
     uint8_t base_high;
     uint32_t base_upper;  // Upper 32 bits of base (64-bit only)
     uint32_t reserved;    // Must be zero
-} __attribute__((packed));
+} _packed;
 
 struct gdt_ptr {
     uint16_t limit;
     uint64_t base;
-} __attribute__((packed));
+} _packed;
 
 extern struct gdt_ptr gdtr;
 
@@ -50,12 +51,12 @@ struct task_state_seg {
     uint64_t reserved3;
     uint16_t reserved4;
     uint16_t iomap_base;  // I/O map base address
-} __attribute__((packed));
+} _packed;
 
 struct global_descr_table {
     struct gdt_entry entries[5];
     struct tss_descriptor tss_desc;
-} __attribute__((packed));
+} _packed;
 
 extern void reload_gdt(void);
 void init_gdt(void);
