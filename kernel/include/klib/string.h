@@ -10,5 +10,7 @@ void* memset(void*, int, size_t);
 size_t strlen(const char*);
 char *kstrndup(const char *str, size_t n);
 int strcmp(const char *str1, const char *str2);
+char *strchr(const char *str, int ch);
+char *kstrtok_r(char *str, const char *delim, char **saveptr);
 
 #endif

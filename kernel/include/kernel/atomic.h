@@ -24,6 +24,9 @@ typedef struct {
 #define ATOMIC_INIT(val)    { .value = (val) }
 #define ATOMIC64_INIT(val)  { .value = (val) }
 
+// THIS PART IS NOT ATOMIC YET maybe will
+// make it that way in the future if I need it
+
 // Runtime inits
 static inline void atomic_init(atomic *v, int val){
     v->value = val;
@@ -33,7 +36,7 @@ static inline void atomic64_init(atomic64 *v, long val){
     v->value = val;
 }
 
-// Basic atomic read/write operations
+// Basic read/write operations
 static inline int atomic_read(const atomic *v){
     return v->value;
 }
@@ -50,7 +53,6 @@ static inline void atomic64_set(atomic64 *v, long val){
     v->value = val;
 }
 
-// Atomic add operations
 static inline void atomic_add(int val, atomic *v){
     __asm__ __volatile__(LOCK_PREFIX "addl %1, %0"
                          : "+m" (v->value)
@@ -65,7 +67,6 @@ static inline void atomic64_add(long val, atomic64 *v){
                          : "memory");
 }
 
-// Atomic subtract operations
 static inline void atomic_sub(int val, atomic *v){
     __asm__ __volatile__(LOCK_PREFIX "subl %1, %0"
                          : "+m" (v->value)
@@ -80,7 +81,6 @@ static inline void atomic64_sub(long val, atomic64 *v){
                          : "memory");
 }
 
-// Atomic increment/decrement
 static inline void atomic_inc(atomic *v){
     __asm__ __volatile__(LOCK_PREFIX "incl %0"
                          : "+m" (v->value)

@@ -32,8 +32,8 @@ static inline void list_add_tail(struct list_node *new_node, struct list_node *h
 static inline void list_del(struct list_node *entry){
     entry->prev->next = entry->next;
     entry->next->prev = entry->prev;
-    entry->next = NULL;
-    entry->prev = NULL;
+    entry->next = entry;
+    entry->prev = entry;
 }
 
 static inline void list_replace(struct list_node *old, struct list_node *new_node){

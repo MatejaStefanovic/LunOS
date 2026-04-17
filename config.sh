@@ -1,6 +1,9 @@
 SYSTEM_HEADER_PROJECTS="kernel"
 PROJECTS="kernel"
 
+TOOLCHAIN_PREFIX="$HOME/opt/cross"
+PATH="$TOOLCHAIN_PREFIX/bin:$PATH"
+
 export MAKE=${MAKE:-make}
 export HOST=${HOST:-$(./default-host.sh)}
 

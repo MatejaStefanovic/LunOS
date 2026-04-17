@@ -125,9 +125,6 @@ isr_common_stub:
     # before CPU automatically pushed rip,cs,rflags and 
     # before I pushed int_no and err_code 
     
-    movq 40(%rsp), %rcx 
-    movq %rcx, 144(%rax)    # RSP
-    movq $0x10, 152(%rax)   # SS for kernel is 0x10
 
     # What we need to do now have only the values 
     # we want as our interrupt frame on the stack

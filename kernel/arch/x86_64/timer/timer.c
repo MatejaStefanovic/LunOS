@@ -131,7 +131,7 @@ static void calibrate_with_known_frequencies(void) {
 }
 
 // We try it all here, if CPUID doesn't work we go to RTC and if that doesn't work
-// we're fucked
+// we're doomed 
 static void calibrate_cpu_timing(void) {
     if (cpu_cycles_per_10ms != 0) // We already calibrated (somehow) 
         return;  

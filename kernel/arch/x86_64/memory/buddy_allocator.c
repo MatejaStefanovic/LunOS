@@ -49,10 +49,10 @@ int add_buddy_arena(uint8_t arena_idx, uint64_t base, uint64_t len){
         KERROR("Not enough arenas, yell at the dev to increase it\n");
         return -1;    
     }
-    // CRITICAL! For whatever reason QEMU + Limine with UEFI is retarded
+    // CRITICAL! For whatever reason QEMU + Limine with UEFI is stupid 
     // so it allocated VGA memory hole as FREE meanwhile it isn't 
     // and if I try to test it on non real hardware address A0000 will always 
-    // page fault therefore we SKIP this shit entirely for testing with QEMU
+    // page fault therefore we SKIP this entirely for testing with QEMU
     if(arena_idx == 0){
         buddy_arena_counter++;
         return 0;
@@ -112,7 +112,7 @@ void populate_buddy_blocks(uint8_t arena_idx){
         // 2. Is properly aligned for buddy allocation
         int best_order = -1;
         
-        for (int order = max_order; order >= 0; --order) {
+        for (int order = max_order; order >= 0; order--) {
             uint64_t block_size = (1ULL << order) * PAGE_FRAME_SIZE;
             
             // Does it fit?

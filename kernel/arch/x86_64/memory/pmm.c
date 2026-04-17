@@ -58,7 +58,7 @@ void *kmalloc(size_t size) {
     alloc_h->order = order;
    
     // Cast is for pointer arithmetic, C doesn't allow void * arithmetic 
-    // start of data points to rigtt after our header because that's where our real
+    // start of data points to right after our header because that's where our real
     // allocated memory starts, end magic is placed right where that memory ends
     char *start_of_data = (char *)virt_addr + sizeof(struct alloc_header);
     uint64_t *end_magic = (uint64_t *)(start_of_data + alloc_h->size);
