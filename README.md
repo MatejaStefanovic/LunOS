@@ -60,7 +60,7 @@ A VFS abstraction layer providing a unified interface for future filesystem impl
 
 ```bash
 git clone https://github.com/MatejaStefanovic/LunOS
-cd kernel
+cd LunOS 
 ./build.sh          # compile the kernel
 ./run.sh            # build and immediately run in QEMU
 ./qemu.sh           # build and immediately run in QEMU
