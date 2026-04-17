@@ -59,12 +59,13 @@ A VFS abstraction layer providing a unified interface for future filesystem impl
 ### Build
 
 ```bash
-git clone https://github.com/yourname/kernel
+git clone https://github.com/MatejaStefanovic/LunOS
 cd kernel
 ./build.sh          # compile the kernel
 ./run.sh            # build and immediately run in QEMU
 ./qemu.sh           # build and immediately run in QEMU
 ./clean.sh          # remove build artifacts
+./sparse.sh         # semantic checker for C programs
 ```
 
 > Tested on QEMU and real hardware. The bare-metal boot via Limine protocol is supported but not guaranteed on all hardware.
