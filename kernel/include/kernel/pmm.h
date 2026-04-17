@@ -15,7 +15,6 @@ struct alloc_header {
     uint64_t magic;
     uint32_t size;
     uint8_t order;
-    bool is_slab;
 } _aligned(8);
 
 void *kmalloc(size_t size);

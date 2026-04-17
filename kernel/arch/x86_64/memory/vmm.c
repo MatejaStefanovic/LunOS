@@ -263,7 +263,7 @@ int vmm_map_range(struct addr_space *as, virt_addr vaddr,
     phys_addr pstart = vmm_page_align_down(paddr);
 
     for (virt_addr v = vstart, p = pstart; v < vend; v += PAGE_SIZE, p += PAGE_SIZE) {
-    if (_vmm_map_page_no_flush(as, v, p, flags) != 0) {
+        if (_vmm_map_page_no_flush(as, v, p, flags) != 0) {
             // Rollback on failure
             vmm_unmap_range(as, vstart, v - vstart);
             return -1;

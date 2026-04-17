@@ -52,7 +52,7 @@ char *kstrndup(const char *str, size_t n){
     if(!str)
         return NULL;
     
-    char *tmp = kmalloc(strlen(str)+1); // +1 for \0
+    char *tmp = kmalloc(n+1); // +1 for \0
     if(!tmp)
         return NULL;
 
@@ -75,3 +75,41 @@ int strcmp(const char *str1, const char *str2){
 
     return *s1 - *s2;
 }
+
+char *strchr(const char *str, int chr){
+    char ch = (char)chr;
+    
+    while(1) {
+        if (*str == ch) return (char *)str;
+        if (*str == '\0') return NULL;
+        str++;
+    }
+}
+
+char *kstrtok_r(char *str, const char *delim, char **saveptr){
+    // First call, subsequent calls are null
+    if(str)
+        *saveptr = str;
+    else if (!*saveptr || **saveptr == '\0')
+        return NULL;
+
+    char *token = *saveptr;
+    while (*token && !strchr(delim, *token)) {
+        token++;
+    }
+
+    char *result = *saveptr;
+
+    // End of original string
+    if (*token == '\0') {
+        *saveptr = token;
+        return result;
+    }
+    
+    // We found a delimiter
+    *token = '\0';
+    *saveptr = token + 1;
+ 
+    return result; 
+}
+

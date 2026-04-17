@@ -33,13 +33,13 @@ static size_t hash_function(uint64_t parent_inode_num, const char *key, size_t l
     return hash;
 }
 
-static int dentry_ht_bucket(struct dentry *entry) {
+static int dentry_ht_bucket(struct dentry *parent, const char *name) {
     uint64_t parent_inode_num; 
-    if(_likely(entry->parent))
-        parent_inode_num = entry->parent->inode->inode_number;
+    if(_likely(parent))
+        parent_inode_num = parent->inode->inode_number;
     else
         parent_inode_num = 0;
-    size_t hash = hash_function(parent_inode_num, entry->name, strlen(entry->name)); 
+    size_t hash = hash_function(parent_inode_num, name, strlen(name)); 
     return hash % DENTRY_HASH_SIZE; 
 }
 
@@ -53,7 +53,7 @@ void dcache_add(struct dentry *entry){
     if(!entry)
         return;
     
-    size_t bucket = dentry_ht_bucket(entry);
+    size_t bucket = dentry_ht_bucket(entry->parent, entry->name);
     // bucket is a linked list and this is just link at 
     // the head
     entry->d_hash_next = dentry_hash_table[bucket];
@@ -64,7 +64,7 @@ void dcache_remove(struct dentry *entry){
     if(!entry)
         return;
 
-    size_t bucket = dentry_ht_bucket(entry);
+    size_t bucket = dentry_ht_bucket(entry->parent, entry->name);
 
     struct dentry **current = &dentry_hash_table[bucket];
 
@@ -77,17 +77,17 @@ void dcache_remove(struct dentry *entry){
     }
 }
 
-struct dentry *dcache_lookup(struct dentry *entry){
-    if(!entry){
+struct dentry *dcache_lookup(struct dentry *parent, const char *name){
+    if(!parent || !name){
         KWARN("Cannot lookup null entry");
         return NULL;
     }
     
-    size_t bucket = dentry_ht_bucket(entry);
+    size_t bucket = dentry_ht_bucket(parent, name);
     struct dentry *current = dentry_hash_table[bucket];
 
     while(current){
-        if(strcmp(current->name, entry->name) == 0)
+        if(strcmp(current->name, name) == 0)
             return current;
         current = current->d_hash_next;
     }
