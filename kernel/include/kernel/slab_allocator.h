@@ -17,7 +17,7 @@ struct free_object {
     struct free_object *next;
 };
 
-// 1 slab = 1 page and slab contains smaller objects within
+// 1 slab = 2 pages and slab contains smaller objects within
 // slab header is placed at the beginning of each page
 struct slab {
     uint64_t magic;

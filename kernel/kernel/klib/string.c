@@ -52,7 +52,7 @@ char *kstrndup(const char *str, size_t n){
     if(!str)
         return NULL;
     
-    char *tmp = kmalloc(strlen(str)+1); // +1 for \0
+    char *tmp = kmalloc(n+1); // +1 for \0
     if(!tmp)
         return NULL;
 

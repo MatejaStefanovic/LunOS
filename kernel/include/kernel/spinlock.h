@@ -88,7 +88,7 @@ static inline void acquire_locks_ordered(spinlock *lock_a, spinlock *lock_b) {
 // kprintf, this of course needs to be under lock as we don't want
 // additional CPUs to print at the same time over each other
 // what can happen is that some interrupt may activate for our CPU 0
-// and if that interrupt tries to use kprintf (like a keyboard IRQ would might do)
+// and if that interrupt tries to use kprintf (like a keyboard IRQ might do)
 // from that interrupt our kprintf will try to acquire the lock but the lock is 
 // already taken (from our first kprintf) and since we never return from the interrupt
 // to release the lock it will cause a deadlock for CPU 0

@@ -1,5 +1,6 @@
 #include <kernel/slab_allocator.h>
 #include <kernel/buddy_allocator.h>
+#include <kernel/compiler.h>
 
 static size_t slab_sizes[] = {
     16, 32, 64, 128, 256, 512, 1024, 2048  
@@ -67,7 +68,7 @@ struct slab *slab_create(struct slab_cache *cache){
     char *objects_start = (char *)virt_addr + sizeof(struct slab);
 
     for(size_t i = 0; i < cache->objects_per_slab; i++){
-        // Buckle the fuck up:
+        // Buckle up:
         // Our free_object can be used for an arbitrary slab object size and we
         // need to calculate with that in mind, so we take the start of our objects 
         // and then to that we add the ith object times the size of our objects which 
@@ -93,7 +94,7 @@ struct slab *slab_create(struct slab_cache *cache){
 void *slab_alloc(struct slab_cache *cache){
     struct slab *slab = NULL;
      
-    if(cache->partial_slabs)
+    if(_likely(cache->partial_slabs))
         slab = cache->partial_slabs;
     else if(cache->empty_slabs)
         slab = cache->empty_slabs;

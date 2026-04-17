@@ -37,6 +37,8 @@ kernel/filesystems/dentry_cache.o \
 kernel/klib/string.o \
 kernel/klib/utils.o \
 kernel/klib/stdio.o \
+kernel/scheduler/scheduler.o \
+kernel/scheduler/context_switch.o \
 
 OBJS=\
 $(KERNEL_OBJS) \
@@ -53,9 +55,6 @@ all: LunOS.kernel
 
 LunOS.kernel: $(OBJS) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
-
-$(ARCHDIR)/boot/crt/crtbegin.o $(ARCHDIR)/boot/crt/crtend.o:
-	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
 .c.o:
 	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)

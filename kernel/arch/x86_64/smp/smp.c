@@ -87,6 +87,7 @@ void smp_init(void) {
     struct task *task2 = create_and_schedule_kernel_task(boot_idle_task);
     struct task *task3 = create_and_schedule_kernel_task(boot_idle_task);
     struct task *task4 = create_and_schedule_kernel_task(boot_idle_task);
+    struct task *task5 = create_and_schedule_kernel_task(boot_idle_task);
     KSUCCESS("Successfully created tasks for CPU IDs: %d %d %d %d\n",
             task1->cpu_id, task2->cpu_id, task3->cpu_id, task4->cpu_id);
 
