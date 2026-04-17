@@ -51,8 +51,8 @@ A VFS abstraction layer providing a unified interface for future filesystem impl
 
 ### Prerequisites
 
-- `as` — (GNU Assembler / GAS) - assembler
-- `gcc` cross-compiler targeting `x86_64-elf`
+- `as` — (GNU Assembler / GAS) - assembler, used **binutils 2.44**
+- `gcc` cross-compiler targeting `x86_64-elf`, used **GCC 15.1.0**
 - `qemu-system-x86_64` — for emulation
 - `make`
 
